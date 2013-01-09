@@ -1,0 +1,78 @@
+apply plugin: 'application'
+
+apply plugin: 'scala'
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'idea-scala'
+
+
+
+buildscript {
+    repositories {
+        maven {
+            url "http://repo.codahale.com"
+            url "https://raw.github.com/rodionmoiseev/maven-repo/master/repo/releases"
+        }
+    }
+    dependencies {
+        classpath group: 'org.rodion.gradle', name: 'idea-scala-plugin', version: '0.2'
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {url 'http://scala-tools.org/repo-releases'}
+    maven {url 'https://raw.github.com/rodionmoiseev/maven-repo/master/repo/releases'}
+}
+
+
+ideaScala {
+    scalaCompilerLibName = 'scala-compiler-lib'
+    scalaLibraryLibName = 'scala-library-lib'
+
+    compiler {
+        maxHeapSize = 1024
+        vmParameters = '-Xss1m -server'
+        scalacBefore = false
+
+        fsc {
+            enable = true
+            maxHeapSize = 1024
+            vmParameters = '-Xms128m -Xss1m -server'
+            idleTimeout = 10
+            serverOptions = ''
+
+            server {
+                //Enable connecting to external FSC server
+                // default: false
+                // defined in: project
+                enable = true
+                host = 'localhost'
+                port = 32834
+                sharedDirectory = '/home/hudvin/fsc/shared'
+            }
+        }
+    }
+}
+dependencies {
+    scalaTools 'org.scala-lang:scala-compiler:2.10.0'
+    scalaTools 'org.scala-lang:scala-library:2.10.0'
+    scalaTools 'org.scala-lang:scala-compiler:2.10.0'
+    scalaApi 'org.scala-lang:scala-library:2.10.0'
+    
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: '0.20.2'
+    compile 'org.apache.httpcomponents:httpclient:4.2.1'
+    compile 'org.jsoup:jsoup:1.6.3'    
+    compile 'com.tinkerpop.gremlin:gremlin-java:2.2.0'
+    compile 'org.scala-lang:scala-library:2.10.0'
+
+    compile 'com.orientechnologies:orient-commons:1.3.0'
+    compile 'com.orientechnologies:orientdb-core:1.3.0'
+    compile 'com.tinkerpop.blueprints:blueprints-orient-graph:2.2.0'
+    compile 'com.tinkerpop.blueprints:blueprints-core:2.2.0'
+    compile 'com.tinkerpop:pipes:2.2.0'    
+    compile 'com.orientechnologies:orientdb-client:1.3.0'
+    compile 'com.orientechnologies:orientdb-enterprise:1.3.0'
+
+    testCompile group: 'junit', name: 'junit', version: '4.+'
+}
