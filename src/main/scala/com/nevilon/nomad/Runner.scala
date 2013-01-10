@@ -31,6 +31,8 @@ object Runner {
 
   type LinkRelation = (String, List[String])
 
+  val dbService = new DBService
+
   val httpClient = buildHttpClient()
 
   val unvisited = ListBuffer[String]()
@@ -40,7 +42,8 @@ object Runner {
   val visited = new ListBuffer[String]() // visited links?
 
 
-  val startLink = "http://www.linux.org.ru"
+  val startLink = "http://www.lenta.ru"
+  dbService.addDomain(startLink)
 
   /*
     new
@@ -108,7 +111,6 @@ object Runner {
     cleardLinks =  cleardLinks.filter(newLink => {
       try {
         val startDomain = getDomainName(startLink)
-        //println(startDomain)
         val linkDomain = getDomainName(newLink)
         startDomain.equals(linkDomain)
       }
@@ -118,6 +120,11 @@ object Runner {
       }
     })
 
+    synchronized{
+      cleardLinks.foreach(url=>{
+        dbService.addPage(result._1,url)
+      })
+    }
     unvisited ++= cleardLinks
    // println("duplicates: " + (result._2.length - cleardLinks.length))
     println("visited: " + visited.length + " " + result._1 + " unvisited: "+unvisited.length)
