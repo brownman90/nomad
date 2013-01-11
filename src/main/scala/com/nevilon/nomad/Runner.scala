@@ -13,7 +13,6 @@ import org.apache.http.protocol.HttpContext
 import org.apache.http.util.EntityUtils
 import collection.mutable.ListBuffer
 import scala.concurrent._
-import scala.concurrent.duration._
 import org.jsoup.Jsoup
 import scala.util.Success
 import java.net.URI
@@ -23,7 +22,6 @@ import java.net.URI
  * User: hudvin
  * Date: 1/6/13
  * Time: 9:40 AM
- * To change this template use File | Settings | File Templates.
  */
 
 

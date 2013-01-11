@@ -1,4 +1,4 @@
-package com.nevilon.nomad
+package com.nevillon.nomad
 
 import com.google.common.net.InternetDomainName
 

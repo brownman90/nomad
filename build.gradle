@@ -1,9 +1,13 @@
 apply plugin: 'application'
 
 apply plugin: 'scala'
+sourceCompatibility = 1.7
+targetCompatibility=1.7
+
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'idea-scala'
+
 
 
 
@@ -54,6 +58,13 @@ ideaScala {
         }
     }
 }
+/*
+compileScala {
+    scalaCompileOptions.useCompileDaemon = true
+    scalaCompileOptions.daemonServer = "localhost:4243"
+}
+*/
+
 dependencies {
     scalaTools 'org.scala-lang:scala-compiler:2.10.0'
     scalaTools 'org.scala-lang:scala-library:2.10.0'

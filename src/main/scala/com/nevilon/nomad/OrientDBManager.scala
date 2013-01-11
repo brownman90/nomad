@@ -10,7 +10,6 @@ import com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE
  * User: hudvin
  * Date: 1/11/13
  * Time: 10:00 AM
- * To change this template use File | Settings | File Templates.
  */
 class OrientDBManager(recreateDatabase: Boolean = false) {
 

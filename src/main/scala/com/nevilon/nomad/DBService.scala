@@ -1,13 +1,11 @@
 package com.nevilon.nomad
 
-import com.orientechnologies.orient.core.record.impl.ODocument
 
 /**
  * Created with IntelliJ IDEA.
  * User: hudvin
  * Date: 1/10/13
  * Time: 5:23 AM
- * To change this template use File | Settings | File Templates.
  */
 class DBService {
 

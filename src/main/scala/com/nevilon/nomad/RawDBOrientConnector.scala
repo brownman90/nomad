@@ -1,13 +1,8 @@
 package com.nevilon.nomad
 
-import com.orientechnologies.orient.core.db.graph.OGraphDatabase
-import com.orientechnologies.orient.core.metadata.schema.{OType, OClass}
-import com.orientechnologies.orient.core.record.impl.{ODocument, ORecordBytes}
-import java.io.{File, FileInputStream, BufferedInputStream}
+import com.orientechnologies.orient.core.record.impl.ODocument
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery
 import com.orientechnologies.orient.core.id.ORID
-import com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE
-import com.orientechnologies.orient.client.remote.OServerAdmin
 
 /**
  * Created with IntelliJ IDEA.
