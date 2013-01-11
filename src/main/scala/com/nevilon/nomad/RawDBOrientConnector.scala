@@ -1,11 +1,13 @@
 package com.nevilon.nomad
 
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase
-import com.orientechnologies.orient.core.metadata.schema.OClass
+import com.orientechnologies.orient.core.metadata.schema.{OType, OClass}
 import com.orientechnologies.orient.core.record.impl.{ODocument, ORecordBytes}
 import java.io.{File, FileInputStream, BufferedInputStream}
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery
 import com.orientechnologies.orient.core.id.ORID
+import com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE
+import com.orientechnologies.orient.client.remote.OServerAdmin
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,19 +20,19 @@ import com.orientechnologies.orient.core.id.ORID
 
 class RawDBOrientConnector {
 
-  val database = new OGraphDatabase("remote:localhost/nomad")
-  connect()
+  val dbManager = new OrientDBManager(true)
+  val database = dbManager.getDatabase()
 
   //root domain
   //use only normalized form like http(s)://www.google.com
   def addDomain(domainName: String) {
-    val domainNode = database.createVertex("domain").field("name", domainName)
+    val domainNode = database.createVertex("Domain").field("name", domainName)
     domainNode.save()
   }
 
   //convert to some pojo object?
   def getDomain(domainName: String): Option[ODocument] = {
-    val query = new OSQLSynchQuery[ODocument]("select from domain WHERE name = ? ")
+    val query = new OSQLSynchQuery[ODocument]("select from Domain WHERE name = ? ")
     val result = database.query[java.util.List[ODocument]](query, domainName)
     if (result.isEmpty) {
       None
@@ -69,14 +71,9 @@ class RawDBOrientConnector {
     traversing?
 
    */
-  def addVertex() {}
 
   def linkPages(parentPageORID: ORID, childPageORID: ORID) {
     database.createEdge(parentPageORID, childPageORID).save()
-  }
-
-  def isVertexTypeExists(vertexType: String): Boolean = {
-    database.getVertexType(vertexType) != null
   }
 
 
@@ -87,51 +84,5 @@ class RawDBOrientConnector {
     }
   }
 
-  def createTypes() {
-    if (!isVertexTypeExists("page")) {
-      database.createVertexType("page")
-    }
-    if (!isVertexTypeExists("domain")) {
-      database.createVertexType("domain")
-    }
-  }
-
-  def connect() {
-    database.open("admin", "admin")
-    database.setUseCustomTypes(true)
-    createTypes()
-  }
-
-  def close() {
-    database.close()
-  }
-
-  def demoUrls() {
-
-
-    /*
-    //val pagesClass = database.createVertexType("pages")
-
-    val rootNode = database.createVertex("pages").field("root", "internet")
-    //add lenta node
-    val lentaNode = database.createVertex("pages").field("url", "lenta.ru")
-    database.createEdge(rootNode, lentaNode)
-
-    var currentNode = rootNode
-
-    for (i <- 1 to 5000) {
-      val lentaPageNode = database.createVertex("pages").field("url", "lenta.ru/" + i.toString)
-      database.createEdge(lentaPageNode, lentaNode)
-    }
-
-    database.setRoot("internet", rootNode)
-    */
-  }
-
-  def main(args: Array[String]) {
-    connect()
-    demoUrls()
-    close()
-  }
 
 }

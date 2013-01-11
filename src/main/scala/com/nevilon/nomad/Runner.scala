@@ -142,10 +142,17 @@ object Runner {
   }
 
   def main(args: Array[String]) {
-    unvisited += startLink
-    val f = crawlUrl(startLink)
-    Await.result(f, Duration.Inf)
-    Thread.sleep(10000000)
+    val start = System.currentTimeMillis()
+    for(i<-1 to 1000){
+     dbService.addPage(System.currentTimeMillis().toString, System.currentTimeMillis().toString)
+     // dbService.addDomain(System.currentTimeMillis().toString)
+    }
+    println(System.currentTimeMillis()-start)
+
+  //  unvisited += startLink
+  //  val f = crawlUrl(startLink)
+ //   Await.result(f, Duration.Inf)
+ //   Thread.sleep(10000000)
   }
 
 
