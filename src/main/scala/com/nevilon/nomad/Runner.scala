@@ -10,6 +10,11 @@ import scala.concurrent._
 import duration.Duration
 import scala.util.Success
 import com.nevilon.nomad.Types.LinkRelation
+import com.orientechnologies.orient.core.config.OGlobalConfiguration
+import java.util.UUID
+import java.net.URL
+import crawlercommons.robots.{RobotUtils, SimpleRobotRulesParser}
+import crawlercommons.fetcher.UserAgent
 
 /**
  * Created with IntelliJ IDEA.
@@ -78,12 +83,32 @@ object Runner {
   }
 
 
-
   def main(args: Array[String]) {
-    linkProvider.unvisited += startLink
-    val f = crawlUrl(startLink)
-    Await.result(f, Duration.Inf)
-    Thread.sleep(10000000)
+
+
+  //  OGlobalConfiguration.TX_USE_LOG.setValue(false)
+
+   // OGlobalConfiguration.MVRBTREE_NODE_PAGE_SIZE.setValue(4096)
+
+    var start = System.currentTimeMillis()
+    for (i <- 1 to 500000000) {
+
+      linkProvider.addPage(i.toString, UUID.randomUUID().toString)
+      if(i % 10000 == 0){
+        println(i + " # "+(System.currentTimeMillis()-start))
+        start = System.currentTimeMillis()
+      }
+
+      // linkProvider.addDomain(System.currentTimeMillis().toString)
+    }
+    println(System.currentTimeMillis() - start)
+
+
+
+    //linkProvider.unvisited += startLink
+   // val f = crawlUrl(startLink)
+   // Await.result(f, Duration.Inf)
+   // Thread.sleep(10000000)
   }
 
 

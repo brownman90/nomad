@@ -22,6 +22,7 @@ class LinkProvider(val domain:String) {
   val visited = new ListBuffer[String]() // visited links?
 
   def addPage(parentPageUrl: String, childPagedUrl: String){
+    //println(parentPageUrl+" # " + childPagedUrl)
     dbService.addPage(URLUtils.normalize(parentPageUrl), URLUtils.normalize(childPagedUrl))
   }
 

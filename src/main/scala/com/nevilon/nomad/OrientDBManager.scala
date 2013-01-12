@@ -4,6 +4,7 @@ import com.orientechnologies.orient.client.remote.OServerAdmin
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase
 import com.orientechnologies.orient.core.metadata.schema.OType
 import com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE
+import com.orientechnologies.orient.core.intent.OIntentMassiveInsert
 
 /**
  * Created with IntelliJ IDEA.
@@ -45,6 +46,8 @@ class OrientDBManager(recreateDatabase: Boolean = false) {
   } else {
     connectToDatabase()
   }
+
+  database.declareIntent( new OIntentMassiveInsert() )
 
   private def connectToAdmin() {
     server = new OServerAdmin(DB_PATH).connect(SERVER_CREDENTIALS._1, SERVER_CREDENTIALS._2)

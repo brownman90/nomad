@@ -1,5 +1,8 @@
 package com.nevilon.nomad
 
+import com.orientechnologies.orient.core.index.OIndexException
+import com.orientechnologies.orient.core.record.impl.ODocument
+
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,7 +17,7 @@ class DBService {
   def addDomain(domainName: String) {
     getDomain(domainName) match {
       case None => connector.addDomain(domainName)
-      case Some(domain)=>
+      case Some(domain) =>
     }
   }
 
@@ -29,14 +32,16 @@ class DBService {
   }
 
   def getOrCreatePage(pageUrl: String): Page = {
-    val page = connector.getPage(pageUrl)
-    page match {
-      case None => {
-        val doc = connector.addPage(pageUrl)
-        Transoformers.document2Page(doc)
-      }
-      case Some(doc) => {
-        Transoformers.document2Page(doc)
+    try {
+      Transoformers.document2Page(connector.addPage(pageUrl))
+    }
+    catch {
+      case e:OIndexException => {
+        println("copy")
+        connector.getPage(pageUrl) match {
+          case None => throw new RuntimeException("Holy shit!")
+          case Some(doc) => Transoformers.document2Page(doc)
+        }
       }
     }
   }

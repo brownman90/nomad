@@ -1,7 +1,6 @@
 package com.nevillon.nomad
 
-import org.junit.Test
-import java.net.URL
+import org.junit.{Assert, Test}
 import com.nevilon.nomad.URLUtils
 
 /**
@@ -12,22 +11,15 @@ import com.nevilon.nomad.URLUtils
  */
 class URLNormalizerTest {
 
-  /*
 
-
-   */
   @Test
   def normalize(){
-    val url = new URL("https://www.lenta.ru/data/news/")
-    println(url.getPath)
-    println(URLUtils.normalize("http://lenta.ru"))
-    println(URLUtils.normalize("www.lenta.ru"))
-
-
-    println(URLUtils.normalize("www.google.com/"))
-    println(URLUtils.normalize("https://www.lenta.ru"))
-    println(URLUtils.normalize("www.lenta.ru/"))
-    println(URLUtils.normalize("https://www.lenta.ru/index.html#panel#another"))
+    Assert.assertEquals(URLUtils.normalize("http://lenta.ru"),"http://lenta.ru")
+    Assert.assertEquals(URLUtils.normalize("www.lenta.ru"),"http://lenta.ru")
+    Assert.assertEquals(URLUtils.normalize("www.google.com/"),"http://google.com")
+    Assert.assertEquals(URLUtils.normalize("https://www.lenta.ru"),"https://lenta.ru")
+    Assert.assertEquals(URLUtils.normalize("www.lenta.ru/"),"http://lenta.ru")
+    Assert.assertEquals(URLUtils.normalize("https://www.lenta.ru/index.html#panel#another"),"https://lenta.ru/index.html")
   }
 
 
