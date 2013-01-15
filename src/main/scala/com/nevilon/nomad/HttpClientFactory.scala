@@ -16,10 +16,10 @@ import org.apache.http.message.BasicHeaderElementIterator
 object HttpClientFactory {
 
 
-  def buildHttpClient(): DefaultHttpClient = {
+  def buildHttpClient(threadsTotal:Int, threadsPerHost:Int): DefaultHttpClient = {
     val cm: PoolingClientConnectionManager = new PoolingClientConnectionManager
-    cm.setMaxTotal(80)
-    cm.setDefaultMaxPerRoute(30)
+    cm.setMaxTotal(threadsTotal)
+    cm.setDefaultMaxPerRoute(threadsPerHost)
 
     val httpclient: DefaultHttpClient = new DefaultHttpClient(cm)
 
@@ -40,6 +40,7 @@ object HttpClientFactory {
             }
           }
         }
+        //remove!!!!
         val target: HttpHost = context.getAttribute(org.apache.http.protocol.ExecutionContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
         if ("www.naughty-server.com".equalsIgnoreCase(target.getHostName)) {
           return 5 * 1000

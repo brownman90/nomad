@@ -29,12 +29,15 @@ class LinkProvider(val domain:String) {
 
   def addNewLinks(result: LinkRelation) {
     var cleardLinks = result._2.filter(newLink => (!unvisited.contains(newLink) && !visited.contains(newLink)))
+    //remove email links
     cleardLinks = cleardLinks.filter(newLink => {
       !newLink.contains("@")
     })
+    //remove empty links
     cleardLinks = cleardLinks.filter(newLink => {
       !newLink.trim().isEmpty
     })
+    //remove links to another domains
     cleardLinks = cleardLinks.filter(newLink => {
       try {
         val startDomain = URLUtils.getDomainName(domain)

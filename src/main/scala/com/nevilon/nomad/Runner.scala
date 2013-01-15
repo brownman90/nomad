@@ -26,7 +26,7 @@ import crawlercommons.fetcher.UserAgent
 
 object Runner {
 
-  val httpClient = HttpClientFactory.buildHttpClient()
+  val httpClient = HttpClientFactory.buildHttpClient(20,20)
 
 
   val startLink = "http://lenta.ru"
@@ -37,7 +37,7 @@ object Runner {
   val MAX_THREADS = 20
   var futures = new ListBuffer[Future[LinkRelation]]
 
-  def crawlUrl(link: String): Future[LinkRelation] = {
+  def crawlUrl(link: String, filterProcessor:FilterProcessor): Future[LinkRelation] = {
     implicit val ec = ExecutionContext.Implicits.global
 
     val f = future[LinkRelation] {
@@ -63,6 +63,11 @@ object Runner {
         linkProvider.visited += link
         // println("new links: " + links.length)
         synchronized {
+          //links.foreach(l=>{
+          //  println(filterProcessor.filterUrl(l))
+         // })
+
+
           linkProvider.addNewLinks((link, links))
 
           while (futures.length < MAX_THREADS) {
@@ -70,7 +75,7 @@ object Runner {
               val linkToCrawl = linkProvider.unvisited.last
               linkProvider.unvisited.remove(linkProvider.unvisited.indexOf(linkToCrawl))
 
-              val newF = crawlUrl(linkProvider.unvisited.last)
+              val newF = crawlUrl(linkProvider.unvisited.last,filterProcessor)
               futures += newF
             }
           }
@@ -84,31 +89,26 @@ object Runner {
 
 
   def main(args: Array[String]) {
-
-
-  //  OGlobalConfiguration.TX_USE_LOG.setValue(false)
-
-   // OGlobalConfiguration.MVRBTREE_NODE_PAGE_SIZE.setValue(4096)
-
+    /*
+    OGlobalConfiguration.dumpConfiguration(System.out)
     var start = System.currentTimeMillis()
     for (i <- 1 to 500000000) {
-
-      linkProvider.addPage(i.toString, UUID.randomUUID().toString)
+     // linkProvider.dbService.addDomain(UUID.randomUUID().toString)
+      //linkProvider.addPage(i.toString, UUID.randomUUID().toString)
       if(i % 10000 == 0){
         println(i + " # "+(System.currentTimeMillis()-start))
         start = System.currentTimeMillis()
       }
-
-      // linkProvider.addDomain(System.currentTimeMillis().toString)
     }
     println(System.currentTimeMillis() - start)
+    */
 
 
-
-    //linkProvider.unvisited += startLink
-   // val f = crawlUrl(startLink)
-   // Await.result(f, Duration.Inf)
-   // Thread.sleep(10000000)
+    val filterProcessor = FilterProcessorFactory.get(startLink)
+    linkProvider.unvisited += startLink
+    val f = crawlUrl(startLink,filterProcessor)
+  //  Await.result(f, Duration.Inf)
+    Thread.sleep(10000000)
   }
 
 
