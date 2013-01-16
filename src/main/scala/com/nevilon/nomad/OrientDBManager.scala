@@ -19,10 +19,15 @@ class OrientDBManager(recreateDatabase: Boolean = false) {
   private val DB_CREDENTIALS = ("admin", "admin")
   private val NEW_DB_PARAMS = ("graph", "local")
 
-  object PageType {
-    val NAME = "page"
-    val URL_FIELD = "url"
-    val URL_IDX = "urlIDX"
+
+  object UrlType {
+    val NAME = "url"
+    val LOCATION_FIELD = "location"
+    val LOCATION_IDX = "locationIDX"
+
+    //str values
+    val STATUS_FIELD = "status"
+    //IN_PROGRESS/COMPLETE/SKIP/NEW
   }
 
   object DomainType {
@@ -85,10 +90,13 @@ class OrientDBManager(recreateDatabase: Boolean = false) {
 
   private def createSchema() {
     //create types
-    if (!isVertexTypeExists(PageType.NAME)) {
-      val pageType = database.createVertexType(PageType.NAME)
-      pageType.createProperty(PageType.URL_FIELD, OType.STRING)
-      pageType.createIndex(PageType.URL_IDX, INDEX_TYPE.UNIQUE, PageType.URL_FIELD)
+    if (!isVertexTypeExists(UrlType.NAME)) {
+      val pageType = database.createVertexType(UrlType.NAME)
+      //location field
+      pageType.createProperty(UrlType.LOCATION_FIELD, OType.STRING)
+      pageType.createIndex(UrlType.LOCATION_IDX, INDEX_TYPE.UNIQUE, UrlType.LOCATION_FIELD)
+      //status field
+      pageType.createProperty(UrlType.STATUS_FIELD, OType.STRING)
     }
     if (!isVertexTypeExists(DomainType.NAME)) {
       val domainType = database.createVertexType(DomainType.NAME)

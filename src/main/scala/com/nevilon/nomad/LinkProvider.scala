@@ -1,7 +1,7 @@
 package com.nevilon.nomad
 
 import collection.mutable.ListBuffer
-import com.nevilon.nomad.Types.LinkRelation
+//import com.nevilon.nomad.Types.LinkRelation
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,10 +10,10 @@ import com.nevilon.nomad.Types.LinkRelation
  * Time: 2:18 PM
  */
 class LinkProvider(val domain:String) {
-
+   /*
 
   private val dbService = new DBService
-  dbService.addDomain(domain)
+  //dbService.addDomain(domain)
 
   val unvisited = ListBuffer[String]()
   // add all but start domain!
@@ -23,7 +23,7 @@ class LinkProvider(val domain:String) {
 
   def addPage(parentPageUrl: String, childPagedUrl: String){
     //println(parentPageUrl+" # " + childPagedUrl)
-    dbService.addPage(URLUtils.normalize(parentPageUrl), URLUtils.normalize(childPagedUrl))
+    dbService.linkUrls(URLUtils.normalize(parentPageUrl), URLUtils.normalize(childPagedUrl))
   }
 
 
@@ -59,5 +59,6 @@ class LinkProvider(val domain:String) {
     // println("duplicates: " + (result._2.length - cleardLinks.length))
     println("visited: " + visited.length + " " + result._1 + " unvisited: " + unvisited.length)
   }
+  */
 
 }

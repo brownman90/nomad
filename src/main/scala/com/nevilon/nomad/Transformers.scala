@@ -12,8 +12,8 @@ import com.orientechnologies.orient.core.id.ORID
  */
 object Transoformers {
 
-  def document2Page(doc: ODocument): Page = {
-    val link = new Page(doc.field("url"), doc.getIdentity)
+  def document2Url(doc: ODocument): Url = {
+    val link = new Url(doc.field("location"), doc.getIdentity)
     return link
   }
 
@@ -32,7 +32,7 @@ class Domain(val name: String, val id: ORID = null) {
 
 }
 
-class Page(val url: String, val id: ORID = null) {
+class Url(val location: String, val id: ORID = null) {
 
 }
 
