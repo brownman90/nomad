@@ -6,6 +6,10 @@ import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery
 import com.orientechnologies.orient.core.id.ORID
 import collection.mutable.ArrayBuffer
 import com.nevilon.nomad.UrlStatus.UrlStatus
+import javax.naming.LinkRef
+import com.orientechnologies.orient.core.tx.OTransaction.TXTYPE
+import com.orientechnologies.orient.core.intent.OIntentMassiveInsert
+import com.orientechnologies.orient.core.config.OGlobalConfiguration
 
 
 /**
@@ -41,7 +45,16 @@ class DBService {
   }
   */
 
-  def getOrCreateUrl(pageUrl: String): Url = {
+  def getOrCreateUrl(pageUrl: String): ODocument = {
+    getUrl(pageUrl) match {
+      case None => {
+        addUrl(pageUrl)
+        //create url
+      }
+      case Some(doc) => doc
+    }
+
+    /*
     try {
       Transoformers.document2Url(addUrl(pageUrl))
     }
@@ -55,6 +68,7 @@ class DBService {
         }
       }
     }
+    */
   }
 
   def getUrl(pageUrl: String): Option[ODocument] = {
@@ -72,10 +86,22 @@ class DBService {
   }
 
 
-  def linkUrls(parentPageUrl: String, childPagedUrl: String) {
-    val parentPage = getOrCreateUrl(parentPageUrl)
-    val childPage = getOrCreateUrl(childPagedUrl)
-    database.createEdge(parentPage.id, childPage.id).save
+  // def linkUrls(parentPageUrl: String, childPagedUrl: String) {
+  def linkUrls(relations: List[Types.LinkRelation]) {
+    var counter = 0
+    relations.foreach(relation => {
+
+      val start = System.currentTimeMillis()
+      val parentPage = getOrCreateUrl(relation._1)
+      val childPage = getOrCreateUrl(relation._2)
+
+      database.createEdge(parentPage, childPage).save()
+
+      println("linkUrls: " + (System.currentTimeMillis() - start) + " counter: " + counter + " total: " + relations.length)
+      counter+=1
+
+
+    })
   }
 
 
@@ -97,6 +123,7 @@ class DBService {
 
 
   def getBFSLinks(url: String, limit: Int): List[Url] = {
+    println("get bfs links")
     //traverse page from (select from page WHERE url=?) #10:1234 while $depth <= 3
     val urlDoc = getUrl(url)
     urlDoc match {
@@ -104,7 +131,7 @@ class DBService {
       case Some(doc) => {
         val p = Transoformers.document2Url(doc)
 
-        val query = new OSQLSynchQuery[ODocument]("select from (traverse V.out, E.in from " + p.id + " where $depth <= 6) where @class = 'url' AND status='NEW' limit " + limit)
+        val query = new OSQLSynchQuery[ODocument]("select from (traverse V.out, E.in from " + p.id + " where $depth <= 15) where @class = 'url' AND status='NEW' limit " + limit)
         val result = database.query[java.util.List[ODocument]](query, p.id)
         val bfsUrls = new ArrayBuffer[Url]()
         import scala.collection.JavaConversions._

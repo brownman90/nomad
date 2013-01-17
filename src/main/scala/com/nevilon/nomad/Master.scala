@@ -24,15 +24,15 @@ object Exe {
   def main(args: Array[String]) {
     val master = new Master
     master.startCrawling()
-    Thread.sleep(1000000)
+    Thread.sleep(10000000)
   }
 
 }
 
 class Master {
 
-  private val MAX_THREADS = 20
-  private val NUM_OF_DOMAINS = 5
+  private val MAX_THREADS = 50
+  private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
 
@@ -42,7 +42,7 @@ class Master {
   def startCrawling() {
     //run each in separate thread?
     // or run thread inside crawler?
-    val worker = new Worker("http://lenta.ru", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -51,11 +51,6 @@ class Master {
   }
 
 }
-
-
-/*
-class Link(url: String, parent: String) {}
-*/
 
 
 class LinkProvider2(domain: String, dbService: DBService) {
@@ -85,9 +80,6 @@ class LinkProvider2(domain: String, dbService: DBService) {
 
   def urlToCrawl(): Option[Url] = {
     if (linksToCrawl.size == 0) {
-      //load from orientdb
-      //check if orientdb is empty!
-      //flush
       flushExtractedLinks()
       val links = loadLinksForCrawling(domain)
       if (links.size == 0) None
@@ -96,6 +88,9 @@ class LinkProvider2(domain: String, dbService: DBService) {
         Some(linksToCrawl.pop())
       }
     } else {
+      if (extractedLinks.length >= 10000) {
+        flushExtractedLinks()
+      }
       Some(linksToCrawl.pop())
     }
   }
@@ -105,15 +100,15 @@ class LinkProvider2(domain: String, dbService: DBService) {
   }
 
   def flushExtractedLinks() {
-    extractedLinks.foreach(relation => {
-      println(relation._1, relation._2)
-      dbService.linkUrls(relation._1, relation._2)
-    })
-    extractedLinks.clear()
+    this.synchronized {
+      dbService.linkUrls(extractedLinks.toList)
+      println("flushed: " + extractedLinks.length)
+      extractedLinks.clear()
+    }
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
-    val bfsLinks = dbService.getBFSLinks(startUrl, 500)
+    val bfsLinks = dbService.getBFSLinks(startUrl, 10000)
     bfsLinks.toList
   }
 
@@ -147,6 +142,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
 
 
     linkProvider.findOrCreateUrl(domain)
+    /*
     val urlToCrawl = linkProvider.urlToCrawl()
     urlToCrawl match {
       case None => throw new RuntimeException("No links to crawl!")
@@ -155,6 +151,9 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
         //crawlUrl()
       }
     }
+    */
+    initCrawling()
+
     /*
       if linksToCrawl.size=0
         save crawled links
@@ -174,36 +173,49 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     val thisFuture = future[LinksTree] {
       var links = ListBuffer[String]()
       try {
-        count+=1
+        count += 1
         val httpGet = new HttpGet(parentLink)
-        println(count)
+        println("get: " + count)
         val data = load(httpClient, httpGet, 0, new BasicHttpContext())
         //check mime type
         if (data._1.contains("html")) {
           //clean and normalize
           links = linkExtractor.extractLinks(data._2, parentLink)
+          println("extracted links: " + links.length)
         }
       } finally {
         //
       }
 
-      clearLinks(parentLink, links.toList)
+      val start = System.currentTimeMillis()
+      dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
+
+      val t =clearLinks(parentLink, links.toList)
+      println("afert: " + (System.currentTimeMillis()-start))
+      t
       //links.map(extractedLink => (parentLink, extractedLink)).toList
     }
 
     thisFuture onComplete {
       // in what thread does this execs?
       case Success(relations) => {
-        dbService.updateUrlStatus(relations._1, UrlStatus.Complete)
-        futures -= thisFuture
+        val start = System.currentTimeMillis()
         synchronized {
+          futures -= thisFuture
+
+          //  println("new:  " + relations._1+ " " +relations._2.length)
           relations._2.foreach(relation => {
             linkProvider.addToExtractedLinks((relations._1, relation))
             // println(filterProcessor.filterUrl(l))
           })
+          //linkProvider.flushExtractedLinks()
           initCrawling()
         }
+
+       println("success: " + (System.currentTimeMillis()-start))
       }
+
+
       case _ => println("some kind of shit")
     }
     thisFuture
@@ -212,7 +224,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   private def initCrawling() {
     var hasUrlsToCrawl = true
     while (futures.length < maxThreads && hasUrlsToCrawl) {
-
+      // println("futures: " + futures.length)
       // if (linkProvider.unvisited.length > 0) {
       //  val linkToCrawl = linkProvider.unvisited.last
       // linkProvider.unvisited.remove(linkProvider.unvisited.indexOf(linkToCrawl))
@@ -227,6 +239,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
           dbService.updateUrlStatus(url.location, UrlStatus.InProgress)
           val newF = crawlUrl(url.location, filterProcessor)
           futures += newF
+          println("starting future for crawling")
         }
       }
 
@@ -235,6 +248,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     // }
 
   }
+
 
   private def load(httpClient: HttpClient, httpGet: HttpGet, id: Int, context: BasicHttpContext): (String, String) = {
     println(id + " - about to get something from " + httpGet.getURI)
@@ -248,6 +262,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     }
     catch {
       case e: Exception => {
+        e.printStackTrace()
         httpGet.abort
         println(id + " - error: " + e + " " + httpGet.getURI)
       }
@@ -268,7 +283,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     clearedLinks = clearedLinks.filter(newLink => {
       !newLink.trim().isEmpty
     })
-    clearedLinks = clearedLinks.map(newLink=>URLUtils.normalize(newLink))
+    clearedLinks = clearedLinks.map(newLink => URLUtils.normalize(newLink))
     clearedLinks = clearedLinks.filter(newLink => {
       !newLink.equals(linksToClear._1)
     })

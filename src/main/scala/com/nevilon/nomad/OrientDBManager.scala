@@ -5,6 +5,8 @@ import com.orientechnologies.orient.core.db.graph.OGraphDatabase
 import com.orientechnologies.orient.core.metadata.schema.OType
 import com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE
 import com.orientechnologies.orient.core.intent.OIntentMassiveInsert
+import com.orientechnologies.orient.core.config.OGlobalConfiguration
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,7 +16,7 @@ import com.orientechnologies.orient.core.intent.OIntentMassiveInsert
  */
 class OrientDBManager(recreateDatabase: Boolean = false) {
 
-  private val DB_PATH = "remote:localhost/nomad"
+  private val DB_PATH = "remote:/localhost/nomad"
   private val SERVER_CREDENTIALS = ("root", "qwerty")
   private val DB_CREDENTIALS = ("admin", "admin")
   private val NEW_DB_PARAMS = ("graph", "local")
@@ -27,6 +29,7 @@ class OrientDBManager(recreateDatabase: Boolean = false) {
 
     //str values
     val STATUS_FIELD = "status"
+    val STATUS_FIELD_IDX = "statusFieldIDX"
     //IN_PROGRESS/COMPLETE/SKIP/NEW
   }
 
@@ -52,7 +55,10 @@ class OrientDBManager(recreateDatabase: Boolean = false) {
     connectToDatabase()
   }
 
-  database.declareIntent( new OIntentMassiveInsert() )
+  //OGlobalConfiguration.MVRBTREE_NODE_PAGE_SIZE.setValue(32768)
+//  mvrbtree.ridBinaryThreshold
+  OGlobalConfiguration.MVRBTREE_RID_BINARY_THRESHOLD.setValue(-1)
+  //database.declareIntent( new OIntentMassiveInsert() )
 
   private def connectToAdmin() {
     server = new OServerAdmin(DB_PATH).connect(SERVER_CREDENTIALS._1, SERVER_CREDENTIALS._2)
@@ -66,6 +72,7 @@ class OrientDBManager(recreateDatabase: Boolean = false) {
     database = new OGraphDatabase(DB_PATH)
     database.open(DB_CREDENTIALS._1, DB_CREDENTIALS._2)
     database.setUseCustomTypes(true)
+    database.setLockMode(OGraphDatabase.LOCK_MODE.NO_LOCKING)
   }
 
   def closeDatabase() {
@@ -97,7 +104,10 @@ class OrientDBManager(recreateDatabase: Boolean = false) {
       pageType.createIndex(UrlType.LOCATION_IDX, INDEX_TYPE.UNIQUE, UrlType.LOCATION_FIELD)
       //status field
       pageType.createProperty(UrlType.STATUS_FIELD, OType.STRING)
+      pageType.createIndex(UrlType.STATUS_FIELD_IDX, INDEX_TYPE.NOTUNIQUE, UrlType.STATUS_FIELD)
+
     }
+
     if (!isVertexTypeExists(DomainType.NAME)) {
       val domainType = database.createVertexType(DomainType.NAME)
       domainType.createProperty(DomainType.NAME_FIELD, OType.STRING)
