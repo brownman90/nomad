@@ -15,17 +15,17 @@ object Types {
 
 }
 
-object UrlStatus extends Enumeration {
-  val InProgress = Value("IN_PROGRESS", 0)
-  val Skip = Value("SKIP", 1)
-  val Complete = Value("COMPLETE", 2)
-  val New = Value("NEW", 3)
+class UrlStatus{}
 
-  class UrlStatus(name: String, val intId: Int) extends Val(nextId, name)
 
-  protected final def Value(name: String, intId: Int): UrlStatus = new UrlStatus(name, intId)
+ object UrlStatus extends Enumeration {
 
-  //UrlStatus.A.id
+  val InProgress = Value("IN_PROGRESS")
+  val Skip = Value("SKIP")
+  val Complete = Value("COMPLETE")
+  val New = Value("NEW")
+
+
 }
 
 

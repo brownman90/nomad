@@ -1,6 +1,5 @@
 package com.nevilon.nomad
 
-import collection.mutable.ListBuffer
 //import com.nevilon.nomad.Types.LinkRelation
 
 /**

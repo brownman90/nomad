@@ -2,6 +2,8 @@ package com.nevilon.nomad
 
 import com.orientechnologies.orient.core.record.impl.ODocument
 import com.orientechnologies.orient.core.id.ORID
+import com.tinkerpop.blueprints.Vertex
+import org.apache.commons.lang.builder.{EqualsBuilder, HashCodeBuilder}
 
 /**
  * Created with IntelliJ IDEA.
@@ -36,3 +38,33 @@ class Url(val location: String, val id: ORID = null) {
 
 }
 
+
+object Transformers2 {
+
+  def vertex2Url(vertex: Vertex): Url2 = {
+    val status = UrlStatus.withName(vertex.getProperty("status").toString)
+    new Url2(vertex.getProperty("location").toString, status , vertex.getId.toString)
+  }
+
+
+}
+
+
+class Url2(val location: String, val status: UrlStatus.Value, val id: String) {
+  override def equals(obj: Any): Boolean = {
+    if (obj.isInstanceOf[Url2]) {
+      val other = obj.asInstanceOf[Url2]
+      new EqualsBuilder()
+        .append(location, other.location)
+        .isEquals()
+    } else {
+      false
+    }
+  }
+
+  override def hashCode(): Int = {
+    new HashCodeBuilder()
+      .append(location)
+      .toHashCode()
+  }
+}

@@ -1,15 +1,8 @@
 package com.nevilon.nomad
 
-import com.orientechnologies.orient.core.index.OIndexException
 import com.orientechnologies.orient.core.record.impl.ODocument
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery
-import com.orientechnologies.orient.core.id.ORID
 import collection.mutable.ArrayBuffer
-import com.nevilon.nomad.UrlStatus.UrlStatus
-import javax.naming.LinkRef
-import com.orientechnologies.orient.core.tx.OTransaction.TXTYPE
-import com.orientechnologies.orient.core.intent.OIntentMassiveInsert
-import com.orientechnologies.orient.core.config.OGlobalConfiguration
 
 
 /**

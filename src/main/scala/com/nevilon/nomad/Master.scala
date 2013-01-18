@@ -10,7 +10,7 @@ import org.apache.http.{HttpEntity, HttpResponse}
 import org.apache.http.util.EntityUtils
 import scala.util.Success
 import collection.mutable
-import com.nevilon.nomad.UrlStatus.UrlStatus
+import storage.graph.TitanDBService
 
 /**
  * Created with IntelliJ IDEA.
@@ -36,7 +36,7 @@ class Master {
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
 
-  private val dbService = new DBService
+  private val dbService = new TitanDBService(true) //DBService
 
 
   def startCrawling() {
@@ -53,7 +53,7 @@ class Master {
 }
 
 
-class LinkProvider2(domain: String, dbService: DBService) {
+class LinkProvider2(domain: String, dbService: TitanDBService) {
 
   private val extractedLinks = new ListBuffer[LinkRelation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
@@ -95,7 +95,9 @@ class LinkProvider2(domain: String, dbService: DBService) {
     }
   }
 
-  def updateUrlStatus(url: String, urlStatus: UrlStatus) {
+
+
+  def updateUrlStatus(url: String, urlStatus: UrlStatus.Value) {
     dbService.updateUrlStatus(url, urlStatus)
   }
 
@@ -108,15 +110,19 @@ class LinkProvider2(domain: String, dbService: DBService) {
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
-    val bfsLinks = dbService.getBFSLinks(startUrl, 10000)
-    bfsLinks.toList
+   // val bfsLinks = dbService.getBFSLinks(startUrl, 10000)
+   // bfsLinks.toList
+
+    new ListBuffer[Url]().toList
+
+
   }
 
 }
 
 
 //use startUrl, not domain!!!
-class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbService: DBService) {
+class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) {
 
 
   private val linkProvider = new LinkProvider2(domain, dbService)
@@ -153,6 +159,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     }
     */
     initCrawling()
+
 
     /*
       if linksToCrawl.size=0
@@ -233,6 +240,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
         case None => {
           hasUrlsToCrawl = false // exit from loop
           println("sorry, no links to crawl")
+
           //throw new RuntimeException("No links to crawl!")
         }
         case Some(url) => {
