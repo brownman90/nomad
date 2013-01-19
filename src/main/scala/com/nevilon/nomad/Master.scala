@@ -11,6 +11,7 @@ import org.apache.http.util.EntityUtils
 import scala.util.Success
 import collection.mutable
 import storage.graph.TitanDBService
+import org.apache.log4j.{Logger, Level}
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,6 +21,18 @@ import storage.graph.TitanDBService
  */
 
 object Exe {
+//
+//  Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.WARN);
+//  Logger.getLogger("httpclient.wire.header").setLevel(Level.WARN);
+//  Logger.getLogger("httpclient.wire.content").setLevel(Level.WARN);
+
+ // java.util.logging.Logger.getLogger("org.apache.http.wire").setLevel(java.util.logging.Level.FINEST);
+ // java.util.logging.Logger.getLogger("org.apache.http.headers").setLevel(java.util.logging.Level.FINEST);
+ // System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
+  //System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
+ // System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire", "ERROR");
+ // System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http", "ERROR");
+ // System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.headers", "ERROR");
 
   def main(args: Array[String]) {
     val master = new Master
@@ -31,7 +44,7 @@ object Exe {
 
 class Master {
 
-  private val MAX_THREADS = 50
+  private val MAX_THREADS = 1
   private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
@@ -42,7 +55,7 @@ class Master {
   def startCrawling() {
     //run each in separate thread?
     // or run thread inside crawler?
-    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://lenta.ru/", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -56,7 +69,7 @@ class Master {
 class LinkProvider2(domain: String, dbService: TitanDBService) {
 
   private val extractedLinks = new ListBuffer[LinkRelation]
-  private val linksToCrawl = new mutable.ArrayStack[Url]
+  private val linksToCrawl = new mutable.ArrayStack[Url2]
 
 
   /*
@@ -78,7 +91,7 @@ class LinkProvider2(domain: String, dbService: TitanDBService) {
     extractedLinks += linkRelation
   }
 
-  def urlToCrawl(): Option[Url] = {
+  def urlToCrawl(): Option[Url2] = {
     if (linksToCrawl.size == 0) {
       flushExtractedLinks()
       val links = loadLinksForCrawling(domain)
@@ -96,7 +109,6 @@ class LinkProvider2(domain: String, dbService: TitanDBService) {
   }
 
 
-
   def updateUrlStatus(url: String, urlStatus: UrlStatus.Value) {
     dbService.updateUrlStatus(url, urlStatus)
   }
@@ -109,11 +121,11 @@ class LinkProvider2(domain: String, dbService: TitanDBService) {
     }
   }
 
-  private def loadLinksForCrawling(startUrl: String): List[Url] = {
-   // val bfsLinks = dbService.getBFSLinks(startUrl, 10000)
-   // bfsLinks.toList
+  private def loadLinksForCrawling(startUrl: String): List[Url2] = {
+    val bfsLinks = dbService.getBFSLinks(startUrl, 10000)
+    bfsLinks.toList
 
-    new ListBuffer[Url]().toList
+    //    new ListBuffer[Url]().toList
 
 
   }
@@ -197,8 +209,8 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
       val start = System.currentTimeMillis()
       dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
 
-      val t =clearLinks(parentLink, links.toList)
-      println("afert: " + (System.currentTimeMillis()-start))
+      val t = clearLinks(parentLink, links.toList)
+      println("afert: " + (System.currentTimeMillis() - start))
       t
       //links.map(extractedLink => (parentLink, extractedLink)).toList
     }
@@ -219,7 +231,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
           initCrawling()
         }
 
-       println("success: " + (System.currentTimeMillis()-start))
+        println("success: " + (System.currentTimeMillis() - start))
       }
 
 

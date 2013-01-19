@@ -24,10 +24,6 @@ class TitanDBService(recreateDb: Boolean) {
 
   connect()
 
-  def test() {
-    val hasNext = graph.getEdges.iterator().hasNext
-    println(hasNext)
-  }
 
   def disconnect() {
     graph.shutdown()
@@ -52,7 +48,7 @@ class TitanDBService(recreateDb: Boolean) {
     conf.setProperty("storage.directory", path)
     conf.setProperty("storage.backend", "berkeleyje")
     conf.setProperty("ids.flush", "true")
-    graph = TitanFactory.open(conf)
+    graph = TitanFactory.openInMemoryGraph()//open(conf)
     if (wasCreated) {
       graph.createKeyIndex("location", classOf[Vertex])
     }
@@ -72,8 +68,12 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
   def getUrl(url: String): Option[Vertex] = {
+    //dumo
+
     val vertices = graph.getVertices("location", url)
     import scala.collection.JavaConversions._
+   // println("vertices: " + graph.getVertices().size)
+
 
     if (vertices.isEmpty) {
       None
@@ -87,7 +87,10 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
   def linkUrls(relations: List[Types.LinkRelation]) {
+    import scala.collection.JavaConversions._
+    println("vertices: " + graph.getVertices().size)
     relations.foreach(relation => {
+      println(relation)
       val parentPage = getOrCreateUrl(relation._1)
       val childPage = getOrCreateUrl(relation._2)
       graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
@@ -119,7 +122,7 @@ class TitanDBService(recreateDb: Boolean) {
       println("item: " + vertex.getProperty("location"))
     }
     */
-    val traverser = new BFSTraverser(rootVertex,50)
+    val traverser = new BFSTraverser(rootVertex, 50)
     traverser.traverse()
     //new ListBuffer[Url].toList
     //graph.getVertices("","").iterator().next().query().
@@ -133,10 +136,16 @@ class TitanDBService(recreateDb: Boolean) {
 
 
     //recursive
-    def traverse():List[Url2] = {
+    def traverse(): List[Url2] = {
+      val startUrl = Transformers2.vertex2Url(startVertex)
+      if (startUrl.status == UrlStatus.New) {
+        urls += startUrl
+      }
+
       queue += startVertex
       val depthLimit = 10
-      while (queue.size > 0 && urls.size<limit) {//correct?
+      while (queue.size > 0 && urls.size < limit) {
+        //correct?
         val currentVertex = queue.front
         queue = queue.tail
         //queue = tail!
@@ -153,7 +162,7 @@ class TitanDBService(recreateDb: Boolean) {
          */
 
         currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
-          if (!(closedSet contains(v))){
+          if (!(closedSet contains (v))) {
             val url = Transformers2.vertex2Url(v)
             if (url.status == UrlStatus.New) {
               urls += url
