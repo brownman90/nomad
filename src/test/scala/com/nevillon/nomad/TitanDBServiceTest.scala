@@ -3,7 +3,7 @@ package com.nevillon.nomad
 import org.junit.{Assert, Test}
 import com.nevilon.nomad.storage.graph.TitanDBService
 import collection.mutable.ListBuffer
-import com.nevilon.nomad.{RawLinkRelation, Types}
+import com.nevilon.nomad.RawLinkRelation
 import com.tinkerpop.blueprints.Direction
 
 /**
@@ -119,7 +119,9 @@ class TitanDBServiceTest {
     relations += (new RawLinkRelation("http://lenta.ru/2", "http://lenta.ru/3"))
     relations += (new RawLinkRelation("http://lenta.ru/2", "http://lenta.ru/4"))
     val counts = relations.groupBy(w => w.to).mapValues(_.size)
-    println(counts)
+    val distincts = relations.distinct
+    val first = new RawLinkRelation("http://lenta.ru/", "http://lenta.ru/1")
+    val second = new RawLinkRelation("http://lenta.ru/", "http://lenta.ru/1")
   }
 
 

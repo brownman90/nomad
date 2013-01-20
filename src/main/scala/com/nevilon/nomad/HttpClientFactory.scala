@@ -36,6 +36,7 @@ object HttpClientFactory {
             }
             catch {
               case ignore: NumberFormatException => {
+                println("fukc")
               }
             }
           }

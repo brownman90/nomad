@@ -48,7 +48,7 @@ class TitanDBService(recreateDb: Boolean) {
     conf.setProperty("storage.directory", path)
     conf.setProperty("storage.backend", "berkeleyje")
     conf.setProperty("ids.flush", "true")
-    graph = TitanFactory.openInMemoryGraph()//open(conf)
+    graph = TitanFactory.openInMemoryGraph() //open(conf)
     if (wasCreated) {
       graph.createKeyIndex("location", classOf[Vertex])
     }
@@ -72,7 +72,7 @@ class TitanDBService(recreateDb: Boolean) {
 
     val vertices = graph.getVertices("location", url)
     import scala.collection.JavaConversions._
-   // println("vertices: " + graph.getVertices().size)
+    // println("vertices: " + graph.getVertices().size)
 
 
     if (vertices.isEmpty) {
@@ -87,7 +87,7 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
   def linkUrls(relations: List[RawLinkRelation]) {
-    val lr = new RawLinkRelation("","")
+    val lr = new RawLinkRelation("", "")
 
     import scala.collection.JavaConversions._
     println("vertices: " + graph.getVertices().size)

@@ -42,6 +42,7 @@ class Url(val location: String, val id: ORID = null) {
 object Transformers2 {
 
   def vertex2Url(vertex: Vertex): Url2 = {
+    println(vertex)
     val status = UrlStatus.withName(vertex.getProperty("status").toString)
     new Url2(vertex.getProperty("location").toString, status , vertex.getId.toString)
   }

@@ -2,7 +2,6 @@ package com.nevilon.nomad
 
 import collection.mutable.ListBuffer
 import concurrent._
-import com.nevilon.nomad.Types._
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.protocol.BasicHttpContext
@@ -11,7 +10,6 @@ import org.apache.http.util.EntityUtils
 import scala.util.Success
 import collection.mutable
 import storage.graph.TitanDBService
-import org.apache.log4j.{Logger, Level}
 
 /**
  * Created with IntelliJ IDEA.
@@ -44,7 +42,7 @@ object Exe {
 
 class Master {
 
-  private val MAX_THREADS = 1
+  private val MAX_THREADS = 8
   private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
@@ -55,7 +53,7 @@ class Master {
   def startCrawling() {
     //run each in separate thread?
     // or run thread inside crawler?
-    val worker = new Worker("http://lenta.ru/", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://www.w3c.org/", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -141,7 +139,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   private val linkExtractor = new LinkExtractor
   val filterProcessor = FilterProcessorFactory.get(domain)
 
-  private var futures = new ListBuffer[Future[LinksTree]]
+  private var futures = new ListBuffer[Future[List[RawLinkRelation]]]
 
   def stop() {}
 
@@ -186,10 +184,10 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   var count = 0
 
 
-  private def crawlUrl(parentLink: String, filterProcessor: FilterProcessor): Future[LinksTree] = {
+  private def crawlUrl(parentLink: String, filterProcessor: FilterProcessor): Future[List[RawLinkRelation]] = {
     implicit val ec = ExecutionContext.Implicits.global
     //  (startLink, List(links))
-    val thisFuture = future[LinksTree] {
+    val thisFuture = future[List[RawLinkRelation]] {
       var links = ListBuffer[String]()
       try {
         count += 1
@@ -209,7 +207,9 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
       val start = System.currentTimeMillis()
       dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
 
-      val t = clearLinks(parentLink, links.toList)
+      val rawLinks =  links.map(link=>{new RawLinkRelation(parentLink,link)})
+
+      val t = clearLinks(rawLinks.toList)
       println("afert: " + (System.currentTimeMillis() - start))
       t
       //links.map(extractedLink => (parentLink, extractedLink)).toList
@@ -217,16 +217,12 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
 
     thisFuture onComplete {
       // in what thread does this execs?
-      case Success(relations) => {
+      case Success(rawLinks) => {
         val start = System.currentTimeMillis()
         synchronized {
           futures -= thisFuture
 
-          //  println("new:  " + relations._1+ " " +relations._2.length)
-          relations._2.foreach(relation => {
-            linkProvider.addToExtractedLinks(new RawLinkRelation(relations._1, relation))
-            // println(filterProcessor.filterUrl(l))
-          })
+          rawLinks.foreach(rawLinks=>{linkProvider.addToExtractedLinks(rawLinks)})
           //linkProvider.flushExtractedLinks()
           initCrawling()
         }
@@ -291,29 +287,28 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   }
 
 
-  def clearLinks(linksToClear: LinksTree): LinksTree = {
+  def clearLinks(linksToClear: List[RawLinkRelation]): List[RawLinkRelation] = {
     //normalize
     //
-    var clearedLinks = linksToClear._2
+    var clearedLinks = List[RawLinkRelation]()
     //remove email links
-    clearedLinks = clearedLinks.filter(newLink => {
-      !newLink.contains("@")
+    clearedLinks = linksToClear.filter(newLink => {
+      !newLink.to.contains("@")
     })
     //remove empty links
     clearedLinks = clearedLinks.filter(newLink => {
-      !newLink.trim().isEmpty
+      !newLink.to.trim().isEmpty
     })
-    clearedLinks = clearedLinks.map(newLink => URLUtils.normalize(newLink))
+    clearedLinks = clearedLinks.map(newLink => new RawLinkRelation(newLink.from,URLUtils.normalize(newLink.to)))
     clearedLinks = clearedLinks.filter(newLink => {
-      !newLink.equals(linksToClear._1)
+      !newLink.equals(linksToClear.to)
     })
-    //remove duplicates
     //remove links to another domains
     clearedLinks = clearedLinks.filter(newLink => {
       try {
         //accept links from this domain only!
         val startDomain = URLUtils.getDomainName(domain)
-        val linkDomain = URLUtils.getDomainName(newLink)
+        val linkDomain = URLUtils.getDomainName(newLink.to)
         startDomain.equals(linkDomain)
       }
       catch {
@@ -323,7 +318,8 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
         false
       }
     })
-    (linksToClear._1, clearedLinks)
+    //remove duplicates
+    clearedLinks.distinct
   }
 
 }
