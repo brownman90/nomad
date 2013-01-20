@@ -86,13 +86,15 @@ class TitanDBService(recreateDb: Boolean) {
     }
   }
 
-  def linkUrls(relations: List[Types.LinkRelation]) {
+  def linkUrls(relations: List[RawLinkRelation]) {
+    val lr = new RawLinkRelation("","")
+
     import scala.collection.JavaConversions._
     println("vertices: " + graph.getVertices().size)
     relations.foreach(relation => {
       println(relation)
-      val parentPage = getOrCreateUrl(relation._1)
-      val childPage = getOrCreateUrl(relation._2)
+      val parentPage = getOrCreateUrl(relation.from)
+      val childPage = getOrCreateUrl(relation.to)
       graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
     })
   }

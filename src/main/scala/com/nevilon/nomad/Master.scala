@@ -68,7 +68,7 @@ class Master {
 
 class LinkProvider2(domain: String, dbService: TitanDBService) {
 
-  private val extractedLinks = new ListBuffer[LinkRelation]
+  private val extractedLinks = new ListBuffer[RawLinkRelation]
   private val linksToCrawl = new mutable.ArrayStack[Url2]
 
 
@@ -87,7 +87,7 @@ class LinkProvider2(domain: String, dbService: TitanDBService) {
     dbService.getOrCreateUrl(url)
   }
 
-  def addToExtractedLinks(linkRelation: LinkRelation) {
+  def addToExtractedLinks(linkRelation: RawLinkRelation) {
     extractedLinks += linkRelation
   }
 
@@ -224,7 +224,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
 
           //  println("new:  " + relations._1+ " " +relations._2.length)
           relations._2.foreach(relation => {
-            linkProvider.addToExtractedLinks((relations._1, relation))
+            linkProvider.addToExtractedLinks(new RawLinkRelation(relations._1, relation))
             // println(filterProcessor.filterUrl(l))
           })
           //linkProvider.flushExtractedLinks()
@@ -307,6 +307,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     clearedLinks = clearedLinks.filter(newLink => {
       !newLink.equals(linksToClear._1)
     })
+    //remove duplicates
     //remove links to another domains
     clearedLinks = clearedLinks.filter(newLink => {
       try {

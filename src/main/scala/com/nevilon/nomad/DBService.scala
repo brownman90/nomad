@@ -80,13 +80,13 @@ class DBService {
 
 
   // def linkUrls(parentPageUrl: String, childPagedUrl: String) {
-  def linkUrls(relations: List[Types.LinkRelation]) {
+  def linkUrls(relations: List[RawLinkRelation]) {
     var counter = 0
     relations.foreach(relation => {
 
       val start = System.currentTimeMillis()
-      val parentPage = getOrCreateUrl(relation._1)
-      val childPage = getOrCreateUrl(relation._2)
+      val parentPage = getOrCreateUrl(relation.from)
+      val childPage = getOrCreateUrl(relation.to)
 
       database.createEdge(parentPage, childPage).save()
 

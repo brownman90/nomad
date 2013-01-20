@@ -11,9 +11,12 @@ object Types {
   //type LinkRelation = (String, List[String])
   //parent - child
   type LinksTree = (String, List[String])
-  type LinkRelation = (String, String)
+  //type LinkRelation = (String, String)
 
 }
+
+class RawLinkRelation(val from: String,val to:String)
+
 
 class UrlStatus{}
 
