@@ -10,11 +10,11 @@ import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
  */
 
 
-class RawLinkRelation(val from: String, val to: String) {
+class RawUrlRelation(val from: String, val to: String) {
 
   override def equals(obj: Any): Boolean = {
-    if (obj.isInstanceOf[RawLinkRelation]) {
-      val other = obj.asInstanceOf[RawLinkRelation]
+    if (obj.isInstanceOf[RawUrlRelation]) {
+      val other = obj.asInstanceOf[RawUrlRelation]
       new EqualsBuilder()
         .append(from, other.from)
         .append(to, other.to)
@@ -45,6 +45,26 @@ object UrlStatus extends Enumeration {
   val New = Value("NEW")
 
 
+}
+
+
+class Url(val location: String, val status: UrlStatus.Value, val id: String) {
+  override def equals(obj: Any): Boolean = {
+    if (obj.isInstanceOf[Url]) {
+      val other = obj.asInstanceOf[Url]
+      new EqualsBuilder()
+        .append(location, other.location)
+        .isEquals()
+    } else {
+      false
+    }
+  }
+
+  override def hashCode(): Int = {
+    new HashCodeBuilder()
+      .append(location)
+      .toHashCode()
+  }
 }
 
 

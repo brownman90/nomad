@@ -86,8 +86,8 @@ class TitanDBService(recreateDb: Boolean) {
     }
   }
 
-  def linkUrls(relations: List[RawLinkRelation]) {
-    val lr = new RawLinkRelation("", "")
+  def linkUrls(relations: List[RawUrlRelation]) {
+    val lr = new RawUrlRelation("", "")
 
     import scala.collection.JavaConversions._
     println("vertices: " + graph.getVertices().size)
@@ -117,7 +117,7 @@ class TitanDBService(recreateDb: Boolean) {
     }
   }
 
-  def getBFSLinks(url: String, limit: Int): List[Url2] = {
+  def getBFSLinks(url: String, limit: Int): List[Url] = {
     val rootVertex = getUrl(url).get //graph.getVertices("location",url).iterator()
     //val vertIt =  rootVertex.query().vertices().has("status",UrlStatus.New.toString()).vertices().iterator()
     /*for (vertex <- rootVertex.getVertices(Direction.BOTH, "relation")) {
@@ -134,12 +134,12 @@ class TitanDBService(recreateDb: Boolean) {
 
     val closedSet = new mutable.HashSet[Vertex]
     var queue = new mutable.Queue[Vertex]
-    val urls = new mutable.Queue[Url2]
+    val urls = new mutable.Queue[Url]
 
 
     //recursive
-    def traverse(): List[Url2] = {
-      val startUrl = Transformers2.vertex2Url(startVertex)
+    def traverse(): List[Url] = {
+      val startUrl = Transformers.vertex2Url(startVertex)
       if (startUrl.status == UrlStatus.New) {
         urls += startUrl
       }
@@ -165,7 +165,7 @@ class TitanDBService(recreateDb: Boolean) {
 
         currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
           if (!(closedSet contains (v))) {
-            val url = Transformers2.vertex2Url(v)
+            val url = Transformers.vertex2Url(v)
             if (url.status == UrlStatus.New) {
               urls += url
             } else if (url.status == UrlStatus.Complete) {

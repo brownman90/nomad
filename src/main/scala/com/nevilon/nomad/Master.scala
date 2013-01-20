@@ -19,18 +19,7 @@ import storage.graph.TitanDBService
  */
 
 object Exe {
-//
-//  Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.WARN);
-//  Logger.getLogger("httpclient.wire.header").setLevel(Level.WARN);
-//  Logger.getLogger("httpclient.wire.content").setLevel(Level.WARN);
 
- // java.util.logging.Logger.getLogger("org.apache.http.wire").setLevel(java.util.logging.Level.FINEST);
- // java.util.logging.Logger.getLogger("org.apache.http.headers").setLevel(java.util.logging.Level.FINEST);
- // System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
-  //System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
- // System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire", "ERROR");
- // System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http", "ERROR");
- // System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.headers", "ERROR");
 
   def main(args: Array[String]) {
     val master = new Master
@@ -64,10 +53,10 @@ class Master {
 }
 
 
-class LinkProvider2(domain: String, dbService: TitanDBService) {
+class LinkProvider(domain: String, dbService: TitanDBService) {
 
-  private val extractedLinks = new ListBuffer[RawLinkRelation]
-  private val linksToCrawl = new mutable.ArrayStack[Url2]
+  private val extractedLinks = new ListBuffer[RawUrlRelation]
+  private val linksToCrawl = new mutable.ArrayStack[Url]
 
 
   /*
@@ -85,11 +74,11 @@ class LinkProvider2(domain: String, dbService: TitanDBService) {
     dbService.getOrCreateUrl(url)
   }
 
-  def addToExtractedLinks(linkRelation: RawLinkRelation) {
+  def addToExtractedLinks(linkRelation: RawUrlRelation) {
     extractedLinks += linkRelation
   }
 
-  def urlToCrawl(): Option[Url2] = {
+  def urlToCrawl(): Option[Url] = {
     if (linksToCrawl.size == 0) {
       flushExtractedLinks()
       val links = loadLinksForCrawling(domain)
@@ -119,7 +108,7 @@ class LinkProvider2(domain: String, dbService: TitanDBService) {
     }
   }
 
-  private def loadLinksForCrawling(startUrl: String): List[Url2] = {
+  private def loadLinksForCrawling(startUrl: String): List[Url] = {
     val bfsLinks = dbService.getBFSLinks(startUrl, 10000)
     bfsLinks.toList
 
@@ -135,11 +124,11 @@ class LinkProvider2(domain: String, dbService: TitanDBService) {
 class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) {
 
 
-  private val linkProvider = new LinkProvider2(domain, dbService)
+  private val linkProvider = new LinkProvider(domain, dbService)
   private val linkExtractor = new LinkExtractor
   val filterProcessor = FilterProcessorFactory.get(domain)
 
-  private var futures = new ListBuffer[Future[List[RawLinkRelation]]]
+  private var futures = new ListBuffer[Future[List[RawUrlRelation]]]
 
   def stop() {}
 
@@ -184,10 +173,10 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   var count = 0
 
 
-  private def crawlUrl(parentLink: String, filterProcessor: FilterProcessor): Future[List[RawLinkRelation]] = {
+  private def crawlUrl(parentLink: String, filterProcessor: FilterProcessor): Future[List[RawUrlRelation]] = {
     implicit val ec = ExecutionContext.Implicits.global
     //  (startLink, List(links))
-    val thisFuture = future[List[RawLinkRelation]] {
+    val thisFuture = future[List[RawUrlRelation]] {
       var links = ListBuffer[String]()
       try {
         count += 1
@@ -207,7 +196,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
       val start = System.currentTimeMillis()
       dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
 
-      val rawLinks =  links.map(link=>{new RawLinkRelation(parentLink,link)})
+      val rawLinks =  links.map(link=>{new RawUrlRelation(parentLink,link)})
 
       val t = clearLinks(rawLinks.toList)
       println("afert: " + (System.currentTimeMillis() - start))
@@ -287,10 +276,10 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   }
 
 
-  def clearLinks(linksToClear: List[RawLinkRelation]): List[RawLinkRelation] = {
+  def clearLinks(linksToClear: List[RawUrlRelation]): List[RawUrlRelation] = {
     //normalize
     //
-    var clearedLinks = List[RawLinkRelation]()
+    var clearedLinks = List[RawUrlRelation]()
     //remove email links
     clearedLinks = linksToClear.filter(newLink => {
       !newLink.to.contains("@")
@@ -299,7 +288,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     clearedLinks = clearedLinks.filter(newLink => {
       !newLink.to.trim().isEmpty
     })
-    clearedLinks = clearedLinks.map(newLink => new RawLinkRelation(newLink.from,URLUtils.normalize(newLink.to)))
+    clearedLinks = clearedLinks.map(newLink => new RawUrlRelation(newLink.from,URLUtils.normalize(newLink.to)))
     clearedLinks = clearedLinks.filter(newLink => {
       !newLink.equals(linksToClear.to)
     })
@@ -313,7 +302,7 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
       }
       catch {
         case e: Exception => {
-          println(e)
+          println("xxxx" + e)
         }
         false
       }
