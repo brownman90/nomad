@@ -11,6 +11,7 @@ import org.apache.commons.io.FileUtils
 import collection.mutable
 import com.nevilon.nomad.UrlStatus
 import scala.Some
+import org.eclipse.jdt.internal.core.Assert
 
 /**
  * Created with IntelliJ IDEA.
@@ -49,6 +50,7 @@ class TitanDBService(recreateDb: Boolean) {
     conf.setProperty("storage.backend", "berkeleyje")
     conf.setProperty("ids.flush", "true")
     graph = TitanFactory.openInMemoryGraph() //open(conf)
+    //graph = TitanFactory.open(conf)
     if (wasCreated) {
       graph.createKeyIndex("location", classOf[Vertex])
     }
@@ -61,19 +63,14 @@ class TitanDBService(recreateDb: Boolean) {
         addUrl(url)
       }
       case Some(doc) => {
-        println("find already saved link")
         doc
       }
     }
   }
 
   def getUrl(url: String): Option[Vertex] = {
-    //dumo
-
     val vertices = graph.getVertices("location", url)
     import scala.collection.JavaConversions._
-    // println("vertices: " + graph.getVertices().size)
-
 
     if (vertices.isEmpty) {
       None
@@ -87,12 +84,7 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
   def linkUrls(relations: List[RawUrlRelation]) {
-    val lr = new RawUrlRelation("", "")
-
-    import scala.collection.JavaConversions._
-    println("vertices: " + graph.getVertices().size)
     relations.foreach(relation => {
-      println(relation)
       val parentPage = getOrCreateUrl(relation.from)
       val childPage = getOrCreateUrl(relation.to)
       graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
@@ -109,25 +101,22 @@ class TitanDBService(recreateDb: Boolean) {
 
 
   def updateUrlStatus(url: String, urlStatus: UrlStatus.Value) {
+    // this.synchronized{
     getUrl(url) match {
       case None => throw new RuntimeException("Sorry, url not found!")
       case Some(vertex) => {
+        Assert.isNotNull(urlStatus)
         vertex.setProperty("status", urlStatus)
       }
     }
+    //  }
+
   }
 
   def getBFSLinks(url: String, limit: Int): List[Url] = {
     val rootVertex = getUrl(url).get //graph.getVertices("location",url).iterator()
-    //val vertIt =  rootVertex.query().vertices().has("status",UrlStatus.New.toString()).vertices().iterator()
-    /*for (vertex <- rootVertex.getVertices(Direction.BOTH, "relation")) {
-      println("item: " + vertex.getProperty("location"))
-    }
-    */
     val traverser = new BFSTraverser(rootVertex, 50)
     traverser.traverse()
-    //new ListBuffer[Url].toList
-    //graph.getVertices("","").iterator().next().query().
   }
 
   class BFSTraverser(val startVertex: Vertex, val limit: Int) {
@@ -139,7 +128,8 @@ class TitanDBService(recreateDb: Boolean) {
 
     //recursive
     def traverse(): List[Url] = {
-      val startUrl = Transformers.vertex2Url(startVertex)
+      val startUrl = Transformers.vertex2Url(startVertex).get //sorry, but statusUrl SHOULD exists at this moment!
+
       if (startUrl.status == UrlStatus.New) {
         urls += startUrl
       }
@@ -166,11 +156,33 @@ class TitanDBService(recreateDb: Boolean) {
         currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
           if (!(closedSet contains (v))) {
             val url = Transformers.vertex2Url(v)
-            if (url.status == UrlStatus.New) {
-              urls += url
-            } else if (url.status == UrlStatus.Complete) {
-              queue += v
+            url match {
+              case Some(urlObj) => {
+                if (urlObj.status == UrlStatus.New) {
+                  urls += urlObj
+                } else if (urlObj.status == UrlStatus.Complete) {
+                  queue += v
+                }
+              }
+               //this is workaround. Sorry. See comment at transformer
+              case None => {
+                if (v.getVertices(Direction.OUT,"relation").size>0){
+                  //mark as complete // or in progress???
+                  v.setProperty("status", UrlStatus.Complete.toString)
+                  queue += v
+                } else {
+                  //no child, so this is our guy
+                  //mark as new
+                  v.setProperty("status", UrlStatus.New.toString)
+                  //process
+                  urls += Transformers.vertex2Url(v).get
+                }
+                throw  new Error("fail")
+
+              }
             }
+
+
           }
         })
         closedSet += currentVertex

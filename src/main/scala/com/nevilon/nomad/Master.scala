@@ -8,8 +8,8 @@ import org.apache.http.protocol.BasicHttpContext
 import org.apache.http.{HttpEntity, HttpResponse}
 import org.apache.http.util.EntityUtils
 import scala.util.Success
-import collection.mutable
 import storage.graph.TitanDBService
+import org.apache.log4j.LogManager
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,8 +31,11 @@ object Exe {
 
 class Master {
 
-  private val MAX_THREADS = 8
-  private val NUM_OF_DOMAINS = 1
+  val logger = LogManager.getLogger(this.getClass.getName)
+
+
+  private val MAX_THREADS = 10
+  private val NUM_OF_DOMAINS = 3
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
 
@@ -42,7 +45,12 @@ class Master {
   def startCrawling() {
     //run each in separate thread?
     // or run thread inside crawler?
-    val worker = new Worker("http://www.w3c.org/", MAX_THREADS, httpClient, dbService)
+    logger.info("starting workerks")
+    //
+    new Worker("http://research.microsoft.com/en-us/groups/nlp/", MAX_THREADS, httpClient, dbService).begin()
+    new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService).begin()
+
+    val worker = new Worker("http://space.com", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -53,80 +61,14 @@ class Master {
 }
 
 
-class LinkProvider(domain: String, dbService: TitanDBService) {
-
-  private val extractedLinks = new ListBuffer[RawUrlRelation]
-  private val linksToCrawl = new mutable.ArrayStack[Url]
-
-
-  /*
-    url - normalized form
-   */
-  def findOrCreateUrl(url: String) {
-    /*
-       go to service
-       do we need to check domains table?
-       obviously we need domains table to choose domains for crawling
-       maybe we should check(lookup for) link and than use domains table as while list?
-       so here we need just find url in urls table and than check if domain is in white list(domains table)
-
-     */
-    dbService.getOrCreateUrl(url)
-  }
-
-  def addToExtractedLinks(linkRelation: RawUrlRelation) {
-    extractedLinks += linkRelation
-  }
-
-  def urlToCrawl(): Option[Url] = {
-    if (linksToCrawl.size == 0) {
-      flushExtractedLinks()
-      val links = loadLinksForCrawling(domain)
-      if (links.size == 0) None
-      else {
-        linksToCrawl ++= links
-        Some(linksToCrawl.pop())
-      }
-    } else {
-      if (extractedLinks.length >= 10000) {
-        flushExtractedLinks()
-      }
-      Some(linksToCrawl.pop())
-    }
-  }
-
-
-  def updateUrlStatus(url: String, urlStatus: UrlStatus.Value) {
-    dbService.updateUrlStatus(url, urlStatus)
-  }
-
-  def flushExtractedLinks() {
-    this.synchronized {
-      dbService.linkUrls(extractedLinks.toList)
-      println("flushed: " + extractedLinks.length)
-      extractedLinks.clear()
-    }
-  }
-
-  private def loadLinksForCrawling(startUrl: String): List[Url] = {
-    val bfsLinks = dbService.getBFSLinks(startUrl, 10000)
-    bfsLinks.toList
-
-    //    new ListBuffer[Url]().toList
-
-
-  }
-
-}
-
-
 //use startUrl, not domain!!!
-class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) {
+class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) {
 
+  private val logger = LogManager.getLogger(this.getClass.getName)
 
-  private val linkProvider = new LinkProvider(domain, dbService)
+  private val linkProvider = new LinkProvider(startUrl, dbService)
   private val linkExtractor = new LinkExtractor
-  val filterProcessor = FilterProcessorFactory.get(domain)
+  private val filterProcessor = FilterProcessorFactory.get(startUrl)
 
   private var futures = new ListBuffer[Future[List[RawUrlRelation]]]
 
@@ -145,82 +87,56 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
 
      */
 
-
-    linkProvider.findOrCreateUrl(domain)
-    /*
-    val urlToCrawl = linkProvider.urlToCrawl()
-    urlToCrawl match {
-      case None => throw new RuntimeException("No links to crawl!")
-      case Some(url) => {
-        initCrawling()
-        //crawlUrl()
-      }
-    }
-    */
+    linkProvider.findOrCreateUrl(startUrl)
     initCrawling()
-
-
-    /*
-      if linksToCrawl.size=0
-        save crawled links
-        get links to crawl
-
-     */
-    //linkProvider.unvisited += domain
-    //val future = crawlUrl(domain, filterProcessor)
   }
 
-  var count = 0
+  //implement statistics object
+  private var count = 0
 
 
   private def crawlUrl(parentLink: String, filterProcessor: FilterProcessor): Future[List[RawUrlRelation]] = {
     implicit val ec = ExecutionContext.Implicits.global
-    //  (startLink, List(links))
     val thisFuture = future[List[RawUrlRelation]] {
       var links = ListBuffer[String]()
       try {
         count += 1
         val httpGet = new HttpGet(parentLink)
-        println("get: " + count)
+        logger.info("total crawled: " + count)
         val data = load(httpClient, httpGet, 0, new BasicHttpContext())
         //check mime type
         if (data._1.contains("html")) {
           //clean and normalize
           links = linkExtractor.extractLinks(data._2, parentLink)
-          println("extracted links: " + links.length)
+          logger.info("links extracted: " + links.length + " from " + parentLink)
         }
-      } finally {
-        //
       }
 
-      val start = System.currentTimeMillis()
-      dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
-
-      val rawLinks =  links.map(link=>{new RawUrlRelation(parentLink,link)})
-
-      val t = clearLinks(rawLinks.toList)
-      println("afert: " + (System.currentTimeMillis() - start))
-      t
-      //links.map(extractedLink => (parentLink, extractedLink)).toList
+      //  dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
+      val rawLinks = links.map(link => {
+        new RawUrlRelation(parentLink, link)
+      })
+      clearLinks(rawLinks.toList)
     }
 
     thisFuture onComplete {
       // in what thread does this execs?
+
       case Success(rawLinks) => {
-        val start = System.currentTimeMillis()
         synchronized {
+          dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
           futures -= thisFuture
 
-          rawLinks.foreach(rawLinks=>{linkProvider.addToExtractedLinks(rawLinks)})
-          //linkProvider.flushExtractedLinks()
+          rawLinks.foreach(rawLinks => {
+            linkProvider.addToExtractedLinks(rawLinks)
+          })
           initCrawling()
         }
 
-        println("success: " + (System.currentTimeMillis() - start))
       }
 
 
-      case _ => println("some kind of shit")
+      case _ => logger.error("some king of shit during crawling " + parentLink )
     }
     thisFuture
   }
@@ -228,35 +144,24 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   private def initCrawling() {
     var hasUrlsToCrawl = true
     while (futures.length < maxThreads && hasUrlsToCrawl) {
-      // println("futures: " + futures.length)
-      // if (linkProvider.unvisited.length > 0) {
-      //  val linkToCrawl = linkProvider.unvisited.last
-      // linkProvider.unvisited.remove(linkProvider.unvisited.indexOf(linkToCrawl))
       linkProvider.urlToCrawl() match {
-
         case None => {
           hasUrlsToCrawl = false // exit from loop
-          println("sorry, no links to crawl")
-
-          //throw new RuntimeException("No links to crawl!")
+          logger.info("sorry, no links to crawl")
         }
         case Some(url) => {
           dbService.updateUrlStatus(url.location, UrlStatus.InProgress)
           val newF = crawlUrl(url.location, filterProcessor)
           futures += newF
-          println("starting future for crawling")
+          logger.info("starting future for crawling " + url.location)
         }
       }
-
-
     }
-    // }
-
   }
 
 
   private def load(httpClient: HttpClient, httpGet: HttpGet, id: Int, context: BasicHttpContext): (String, String) = {
-    println(id + " - about to get something from " + httpGet.getURI)
+    logger.info("connecting to " + httpGet.getURI)
     try {
       val response: HttpResponse = httpClient.execute(httpGet, context)
       val entity: HttpEntity = response.getEntity
@@ -267,9 +172,8 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
     }
     catch {
       case e: Exception => {
-        e.printStackTrace()
-        httpGet.abort
-        println(id + " - error: " + e + " " + httpGet.getURI)
+        logger.info("error during crawling " + httpGet.getURI, e)
+        httpGet.abort()
       }
       ("", "")
     }
@@ -277,32 +181,27 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
 
 
   def clearLinks(linksToClear: List[RawUrlRelation]): List[RawUrlRelation] = {
-    //normalize
-    //
     var clearedLinks = List[RawUrlRelation]()
     //remove email links
-    clearedLinks = linksToClear.filter(newLink => {
-      !newLink.to.contains("@")
-    })
+    clearedLinks = linksToClear.filter(url => !url.to.contains("@"))
+    clearedLinks = clearedLinks.filter(url => !url.to.startsWith("mailto:"))
     //remove empty links
-    clearedLinks = clearedLinks.filter(newLink => {
-      !newLink.to.trim().isEmpty
-    })
-    clearedLinks = clearedLinks.map(newLink => new RawUrlRelation(newLink.from,URLUtils.normalize(newLink.to)))
-    clearedLinks = clearedLinks.filter(newLink => {
-      !newLink.equals(linksToClear.to)
-    })
+    clearedLinks = clearedLinks.filter(newLink => !newLink.to.trim().isEmpty)
+    //normalization
+    //normalize from?
+    clearedLinks = clearedLinks.map(newLink => new RawUrlRelation(newLink.from, URLUtils.normalize(newLink.to)))
+    clearedLinks = clearedLinks.filter(newLink => !newLink.from.equals(newLink.to)) // check this!!!!)
     //remove links to another domains
     clearedLinks = clearedLinks.filter(newLink => {
       try {
         //accept links from this domain only!
-        val startDomain = URLUtils.getDomainName(domain)
+        val startDomain = URLUtils.getDomainName(startUrl)
         val linkDomain = URLUtils.getDomainName(newLink.to)
         startDomain.equals(linkDomain)
       }
       catch {
         case e: Exception => {
-          println("xxxx" + e)
+          logger.error("error during clearLinks", e)
         }
         false
       }
@@ -312,16 +211,3 @@ class Worker(domain: String, val maxThreads: Int, httpClient: HttpClient, dbServ
   }
 
 }
-
-/*
-terminology
-  domain - http://lenta.ru - normalized!!!
-  Link
-    url - url of link
-    parent - parent link// but in graph could be many parents!!!
-
- */
-
-
-
-
