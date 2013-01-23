@@ -129,7 +129,7 @@ class TitanDBService(recreateDb: Boolean) {
 
     //recursive
     def traverse(): List[Url] = {
-      val startUrl = Transformers.vertex2Url(startVertex).get //sorry, but statusUrl SHOULD exists at this moment!
+      val startUrl = Transformers.vertex2Url(startVertex)
       if (startUrl.status == UrlStatus.New) {
         urls += startUrl
       }
@@ -150,35 +150,37 @@ class TitanDBService(recreateDb: Boolean) {
          */
         currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
           if (!(closedSet contains (v))) {
-            val url = Transformers.vertex2Url(v)
-            url match {
-              case Some(urlObj) => {
-                if (urlObj.status == UrlStatus.New) {
-                  urls += urlObj
-                } else if (urlObj.status == UrlStatus.Complete) {
-                  queue += v
-                }
-              }
-              //this is workaround. Sorry. See comment at transformer
-              case None => {
-                if (v.getVertices(Direction.OUT, "relation").size > 0) {
-                  //mark as complete // or in progress???
-                  v.setProperty("status", UrlStatus.Complete.toString)
-                  queue += v
-                } else {
-                  //no child, so this is our guy
-                  //mark as new
-                  v.setProperty("status", UrlStatus.New.toString)
-                  //process
-                  urls += Transformers.vertex2Url(v).get
-                }
-                logger.error("vertex " + v.getId + " contatins null properties")
-                throw new Error("fail")
+            /*this is workaround. By some reasons sometimes vertex is returned without properties
+            Solution: if there is no properties:
+               return None
+               set status to New
 
+             on next traverse:
+                 if status==New But has child - set status to Complete
+                    skip vertex
+             */
+            val statusProperty = v.getProperty("status")
+            if (statusProperty == null) {
+              if (v.getVertices(Direction.OUT, "relation").size > 0) {
+                //mark as complete // or in progress???
+                v.setProperty("status", UrlStatus.Complete.toString)
+                queue += v
+              } else {
+                //no child, so this is our guy
+                //mark as new
+                v.setProperty("status", UrlStatus.New.toString)
+                //process
+                urls += Transformers.vertex2Url(v)
+              }
+              logger.error("vertex " + v.getId + " contatins null properties")
+            } else {
+              val url = Transformers.vertex2Url(v)
+              if (url.status == UrlStatus.New) {
+                urls += url
+              } else if (url.status == UrlStatus.Complete) {
+                queue += v
               }
             }
-
-
           }
         })
         closedSet += currentVertex
