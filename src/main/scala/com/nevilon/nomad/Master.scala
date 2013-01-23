@@ -18,27 +18,14 @@ import org.apache.log4j.LogManager
  * Time: 7:51 AM
  */
 
-object Exe {
-
-
-  def main(args: Array[String]) {
-    val master = new Master
-    master.startCrawling()
-    Thread.sleep(10000000)
-  }
-
-}
-
 class Master {
 
   private val logger = LogManager.getLogger(this.getClass.getName)
-
 
   private val MAX_THREADS = 10
   private val NUM_OF_DOMAINS = 3
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
-
   private val dbService = new TitanDBService(true) //DBService
 
 
@@ -47,7 +34,6 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-
     val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
