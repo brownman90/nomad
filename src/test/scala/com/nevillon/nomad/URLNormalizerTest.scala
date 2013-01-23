@@ -1,7 +1,7 @@
 package com.nevillon.nomad
 
 import org.junit.{Assert, Test}
-import com.nevilon.nomad.URLUtils
+import com.nevilon.nomad.crawler.URLUtils
 
 /**
  * Created with IntelliJ IDEA.

@@ -1,4 +1,4 @@
-package com.nevilon.nomad
+package com.nevilon.nomad.crawler
 
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.conn.PoolingClientConnectionManager

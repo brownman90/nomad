@@ -1,9 +1,9 @@
-package com.nevilon.nomad
+package com.nevilon.nomad.crawler
 
-import storage.graph.TitanDBService
 import collection.mutable.ListBuffer
 import collection.mutable
 import org.apache.log4j.LogManager
+import com.nevilon.nomad.storage.graph.TitanDBService
 
 /**
  * Created with IntelliJ IDEA.

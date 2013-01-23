@@ -1,4 +1,4 @@
-package com.nevilon.nomad
+package com.nevilon.nomad.crawler
 
 import org.jsoup.Jsoup
 import collection.mutable.ListBuffer

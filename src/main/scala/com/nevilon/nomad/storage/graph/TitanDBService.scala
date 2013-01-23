@@ -6,10 +6,11 @@ import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import scala.Predef._
 import com.nevilon.nomad._
 import com.tinkerpop.blueprints.{Direction, Vertex}
+import crawler.{Url, UrlStatus, RawUrlRelation, Transformers}
 import java.util.UUID
 import org.apache.commons.io.FileUtils
 import collection.mutable
-import com.nevilon.nomad.UrlStatus
+import com.nevilon.nomad.crawler.UrlStatus
 import scala.Some
 import org.eclipse.jdt.internal.core.Assert
 import org.apache.log4j.LogManager

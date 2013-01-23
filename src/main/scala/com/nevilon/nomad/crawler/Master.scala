@@ -1,4 +1,4 @@
-package com.nevilon.nomad
+package com.nevilon.nomad.crawler
 
 import collection.mutable.ListBuffer
 import concurrent._
@@ -8,8 +8,9 @@ import org.apache.http.protocol.BasicHttpContext
 import org.apache.http.{HttpEntity, HttpResponse}
 import org.apache.http.util.EntityUtils
 import scala.util.Success
-import storage.graph.TitanDBService
 import org.apache.log4j.LogManager
+import com.nevilon.nomad.storage.graph.TitanDBService
+import com.nevilon.nomad.filter.{FilterProcessor, FilterProcessorFactory}
 
 /**
  * Created with IntelliJ IDEA.

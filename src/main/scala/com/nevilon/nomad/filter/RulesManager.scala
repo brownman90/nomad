@@ -1,4 +1,4 @@
-package com.nevilon.nomad
+package com.nevilon.nomad.filter
 
 /**
  * Created with IntelliJ IDEA.

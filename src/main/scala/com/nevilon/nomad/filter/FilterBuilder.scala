@@ -1,4 +1,4 @@
-package com.nevilon.nomad
+package com.nevilon.nomad.filter
 
 import collection.mutable.ListBuffer
 import java.net.URL

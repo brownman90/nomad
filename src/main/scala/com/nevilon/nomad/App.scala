@@ -1,5 +1,7 @@
 package com.nevilon.nomad
 
+import crawler.Master
+
 /**
  * Created with IntelliJ IDEA.
  * User: hudvin

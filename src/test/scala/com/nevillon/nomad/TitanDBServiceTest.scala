@@ -3,8 +3,8 @@ package com.nevillon.nomad
 import org.junit.{Assert, Test}
 import com.nevilon.nomad.storage.graph.TitanDBService
 import collection.mutable.ListBuffer
-import com.nevilon.nomad.RawUrlRelation
 import com.tinkerpop.blueprints.Direction
+import com.nevilon.nomad.crawler.RawUrlRelation
 
 /**
  * Created with IntelliJ IDEA.
