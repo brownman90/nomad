@@ -3,6 +3,7 @@ package com.nevilon.nomad
 import storage.graph.TitanDBService
 import collection.mutable.ListBuffer
 import collection.mutable
+import org.apache.log4j.LogManager
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,6 +16,10 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
   private val extractedLinks = new ListBuffer[RawUrlRelation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
+  private val BFS_LIMIT = 1000
+
+
+  private val logger = LogManager.getLogger(this.getClass.getName)
 
   /*
     url - normalized form
@@ -60,14 +65,14 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
   def flushExtractedLinks() {
     this.synchronized {
       dbService.linkUrls(extractedLinks.toList)
-      println("flushed: " + extractedLinks.length)
+      logger.info("flushed: " + extractedLinks.length + " link(s)")
       extractedLinks.clear()
     }
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
     val bfsLinks = dbService.getBFSLinks(startUrl, 1000)
-    println("loadLinksForCrawling " + bfsLinks.size)
+    logger.info("bfs links loaded: "+BFS_LIMIT)
     bfsLinks.toList
   }
 

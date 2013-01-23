@@ -99,17 +99,6 @@ class TitanDBServiceTest {
   }
 
 
-  @Test def countTest(){
-    val service = new TitanDBService(false)
-    import scala.collection.JavaConversions._
-    println( service.graph.getVertices().size)
-  }
-
-  @Test def getOrCreateTest() {
-
-  }
-
-
   @Test def groupDuplicatesTest(){
     val relations = new ListBuffer[RawUrlRelation]
     relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1"))

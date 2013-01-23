@@ -12,6 +12,8 @@ import collection.mutable
 import com.nevilon.nomad.UrlStatus
 import scala.Some
 import org.eclipse.jdt.internal.core.Assert
+import org.apache.log4j.LogManager
+import scala.collection.JavaConversions._
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,10 +23,10 @@ import org.eclipse.jdt.internal.core.Assert
  */
 class TitanDBService(recreateDb: Boolean) {
 
-  var graph: TitanGraph = null
+  private val logger = LogManager.getLogger(this.getClass.getName)
+  private var graph: TitanGraph = null
 
   connect()
-
 
   def disconnect() {
     graph.shutdown()
@@ -33,7 +35,7 @@ class TitanDBService(recreateDb: Boolean) {
   def connect() {
     val path: String = "/tmp/dbstorage/"
     val dbDir: File = new File(path)
-
+    //drop db
     if (recreateDb && dbDir.exists()) {
       FileUtils.deleteDirectory(dbDir)
     }
@@ -70,8 +72,6 @@ class TitanDBService(recreateDb: Boolean) {
 
   def getUrl(url: String): Option[Vertex] = {
     val vertices = graph.getVertices("location", url)
-    import scala.collection.JavaConversions._
-
     if (vertices.isEmpty) {
       None
     } else {
@@ -89,10 +89,8 @@ class TitanDBService(recreateDb: Boolean) {
       val childPage = getOrCreateUrl(relation.to)
       graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
     })
-    import scala.collection.JavaConversions._
 
-    println("vert "+graph.getVertices.iterator().size)
-
+    logger.info("total vertices " + graph.getVertices.iterator().size)
   }
 
 
@@ -125,28 +123,22 @@ class TitanDBService(recreateDb: Boolean) {
 
   class BFSTraverser(val startVertex: Vertex, val limit: Int) {
 
-    val closedSet = new mutable.HashSet[Vertex]
-    var queue = new mutable.Queue[Vertex]
-    val urls = new mutable.Queue[Url]
-
+    private val closedSet = new mutable.HashSet[Vertex]
+    private var queue = new mutable.Queue[Vertex]
+    private val urls = new mutable.Queue[Url]
 
     //recursive
     def traverse(): List[Url] = {
       val startUrl = Transformers.vertex2Url(startVertex).get //sorry, but statusUrl SHOULD exists at this moment!
-
       if (startUrl.status == UrlStatus.New) {
         urls += startUrl
       }
-
       queue += startVertex
       val depthLimit = 10
       while (queue.size > 0 && urls.size < limit) {
         //correct?
         val currentVertex = queue.front
         queue = queue.tail
-        //queue = tail!
-        import scala.collection.JavaConversions._
-
         /*
            node with NEW status - to urls
            node with any status  - to closedSet
@@ -156,7 +148,6 @@ class TitanDBService(recreateDb: Boolean) {
               add all new to query
 
          */
-
         currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
           if (!(closedSet contains (v))) {
             val url = Transformers.vertex2Url(v)
@@ -168,9 +159,9 @@ class TitanDBService(recreateDb: Boolean) {
                   queue += v
                 }
               }
-               //this is workaround. Sorry. See comment at transformer
+              //this is workaround. Sorry. See comment at transformer
               case None => {
-                if (v.getVertices(Direction.OUT,"relation").size>0){
+                if (v.getVertices(Direction.OUT, "relation").size > 0) {
                   //mark as complete // or in progress???
                   v.setProperty("status", UrlStatus.Complete.toString)
                   queue += v
@@ -181,7 +172,8 @@ class TitanDBService(recreateDb: Boolean) {
                   //process
                   urls += Transformers.vertex2Url(v).get
                 }
-                throw  new Error("fail")
+                logger.error("vertex " + v.getId + " contatins null properties")
+                throw new Error("fail")
 
               }
             }

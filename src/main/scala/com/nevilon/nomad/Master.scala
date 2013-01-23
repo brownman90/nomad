@@ -31,7 +31,7 @@ object Exe {
 
 class Master {
 
-  val logger = LogManager.getLogger(this.getClass.getName)
+  private val logger = LogManager.getLogger(this.getClass.getName)
 
 
   private val MAX_THREADS = 10
