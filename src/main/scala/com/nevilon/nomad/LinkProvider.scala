@@ -45,7 +45,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
         Some(linksToCrawl.pop())
       }
     } else {
-      if (extractedLinks.length >= 10000) {
+      if (extractedLinks.length >= 30000) {
         flushExtractedLinks()
       }
       Some(linksToCrawl.pop())
@@ -66,7 +66,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
-    val bfsLinks = dbService.getBFSLinks(startUrl, 5000)
+    val bfsLinks = dbService.getBFSLinks(startUrl, 1000)
     println("loadLinksForCrawling " + bfsLinks.size)
     bfsLinks.toList
   }

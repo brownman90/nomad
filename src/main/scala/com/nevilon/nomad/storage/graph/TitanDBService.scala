@@ -89,6 +89,10 @@ class TitanDBService(recreateDb: Boolean) {
       val childPage = getOrCreateUrl(relation.to)
       graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
     })
+    import scala.collection.JavaConversions._
+
+    println("vert "+graph.getVertices.iterator().size)
+
   }
 
 
@@ -115,7 +119,7 @@ class TitanDBService(recreateDb: Boolean) {
 
   def getBFSLinks(url: String, limit: Int): List[Url] = {
     val rootVertex = getUrl(url).get //graph.getVertices("location",url).iterator()
-    val traverser = new BFSTraverser(rootVertex, 50)
+    val traverser = new BFSTraverser(rootVertex, limit)
     traverser.traverse()
   }
 

@@ -47,10 +47,8 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    new Worker("http://research.microsoft.com/en-us/groups/nlp/", MAX_THREADS, httpClient, dbService).begin()
-    new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService).begin()
 
-    val worker = new Worker("http://space.com", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
