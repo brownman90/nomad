@@ -101,12 +101,13 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
       val rawLinks = links.map(link => {
         new RawUrlRelation(parentLink, link)
       })
-      clearLinks(rawLinks.toList)
+      URLUtils.clearLinks(startUrl, rawLinks.toList)
+      //filter links
+
     }
 
     thisFuture onComplete {
       // in what thread does this execs?
-
       case Success(rawLinks) => {
         synchronized {
           dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
@@ -119,9 +120,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
         }
 
       }
-
-
-      case _ => logger.error("some king of shit during crawling " + parentLink )
+      case _ => logger.error("some king of shit during crawling " + parentLink)
     }
     thisFuture
   }
@@ -164,35 +163,5 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     }
   }
 
-
-  def clearLinks(linksToClear: List[RawUrlRelation]): List[RawUrlRelation] = {
-    var clearedLinks = List[RawUrlRelation]()
-    //remove email links
-    clearedLinks = linksToClear.filter(url => !url.to.contains("@"))
-    clearedLinks = clearedLinks.filter(url => !url.to.startsWith("mailto:"))
-    //remove empty links
-    clearedLinks = clearedLinks.filter(newLink => !newLink.to.trim().isEmpty)
-    //normalization
-    //normalize from?
-    clearedLinks = clearedLinks.map(newLink => new RawUrlRelation(newLink.from, URLUtils.normalize(newLink.to)))
-    clearedLinks = clearedLinks.filter(newLink => !newLink.from.equals(newLink.to)) // check this!!!!)
-    //remove links to another domains
-    clearedLinks = clearedLinks.filter(newLink => {
-      try {
-        //accept links from this domain only!
-        val startDomain = URLUtils.getDomainName(startUrl)
-        val linkDomain = URLUtils.getDomainName(newLink.to)
-        startDomain.equals(linkDomain)
-      }
-      catch {
-        case e: Exception => {
-          logger.error("error during clearLinks", e)
-        }
-        false
-      }
-    })
-    //remove duplicates
-    clearedLinks.distinct
-  }
 
 }
