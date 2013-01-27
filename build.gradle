@@ -72,21 +72,17 @@ dependencies {
     scalaTools 'org.scala-lang:scala-compiler:2.10.0'
     scalaApi 'org.scala-lang:scala-library:2.10.0'
     
-    compile group: 'org.elasticsearch', name: 'elasticsearch', version: '0.20.2'
     compile 'org.apache.httpcomponents:httpclient:4.2.1'
     compile 'org.jsoup:jsoup:1.6.3'    
     compile 'com.tinkerpop.gremlin:gremlin-java:2.2.0'
     compile 'org.scala-lang:scala-library:2.10.0'
 
-    compile 'com.orientechnologies:orient-commons:1.3.0'
-    compile 'com.orientechnologies:orientdb-core:1.3.0'
-    compile 'com.tinkerpop.blueprints:blueprints-orient-graph:2.2.0'
     compile 'com.tinkerpop.blueprints:blueprints-core:2.2.0'
     compile 'com.tinkerpop:pipes:2.2.0'    
-    compile 'com.orientechnologies:orientdb-client:1.3.0'
-    compile 'com.orientechnologies:orientdb-enterprise:1.3.0'
     compile  'com.google.guava:guava:12.0'
     compile 'com.google.code.crawler-commons:crawler-commons:0.1'
+   
+    compile 'org.codehaus.groovy:groovy-all:2.0.6'
 
     compile 'com.thinkaurelius.titan:titan:0.2.0'
     compile 'com.sleepycat:je:5.0.58'

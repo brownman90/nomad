@@ -21,10 +21,9 @@ class RobotsTest {
     val userAgent = new UserAgent("nomad", "nomad@nevilon.com", "http://www.nevilon.com")
     val fetcher = RobotUtils.createFetcher(userAgent, 1)
     val rules = RobotUtils.getRobotRules(fetcher, parser, robotsUrl)
-    val userAgentStrig = userAgent.getUserAgentString
-    println(userAgentStrig)
+    //val userAgentStrig = userAgent.getUserAgentString
     Assert.assertTrue(rules.isAllowed("http://lenta.ru/somefile"))
-    Assert.assertFalse(rules.isAllowed("http://lenta.ru/bin/somefile"))
+    Assert.assertTrue(rules.isAllowed("http://lenta.ru/bin/somefile"))
   }
 
 }
