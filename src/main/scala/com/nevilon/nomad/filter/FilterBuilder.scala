@@ -28,42 +28,11 @@ object FilterProcessorFactory {
     //fps.addEntityFilter()
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
+    fps.addUrlFilter(new GroovyScriptingFilter)
     fps.addUrlFilter(new EndFilter)
     fps
   }
 
-}
-
-
-class EndFilter extends UrlFilter {
-  def filter(url: String): Option[Action.Action] = Some(Action.Download)
-}
-
-
-class RobotsUrlFilter(domain: String) extends UrlFilter {
-
-  //set the same user agent for http client
-  object RobotsConfig {
-
-    val ROBOTS_TXT = "/robots.txt"
-    val CRAWLER_NAME = "nomad"
-    val CRAWLER_EMAIL = "homad@nevilon.com"
-    val CRAWLER_PAGE = "http://www.nevilon.com"
-
-  }
-
-  private val robotsUrl = new URL(domain + RobotsConfig.ROBOTS_TXT)
-  private val parser = new SimpleRobotRulesParser()
-  private val userAgent = new UserAgent(RobotsConfig.CRAWLER_NAME, RobotsConfig.CRAWLER_EMAIL, RobotsConfig.CRAWLER_PAGE)
-  private val fetcher = RobotUtils.createFetcher(userAgent, 1)
-  private val rules = RobotUtils.getRobotRules(fetcher, parser, robotsUrl)
-
-
-  import Action._
-
-  override def filter(url: String): Option[Action] = {
-    if (rules.isAllowed(url)) Some(Action.Download) else Some(Action.Skip)
-  }
 }
 
 
@@ -132,3 +101,9 @@ trait EntityFilter extends Filter {
 }
 
 abstract class Filter {}
+
+
+
+
+
+
