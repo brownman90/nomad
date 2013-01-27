@@ -15,6 +15,7 @@ import scala.Some
 import org.eclipse.jdt.internal.core.Assert
 import org.apache.log4j.LogManager
 import scala.collection.JavaConversions._
+import collection.mutable.ListBuffer
 
 /**
  * Created with IntelliJ IDEA.
@@ -116,6 +117,23 @@ class TitanDBService(recreateDb: Boolean) {
 
   }
 
+  /*
+  def verify() {
+    val urls = new ListBuffer[String]
+    val vertices = graph.getVertices
+    for (v <- vertices) {
+      urls += v.getProperty("location").toString
+    }
+
+    val counts = urls.groupBy(w => w).mapValues(_.size)
+    counts.foreach((i)=>{
+      if ((i._2)>1){
+         println("fuck")
+      }
+    })
+  }
+  */
+
   def getBFSLinks(url: String, limit: Int): List[Url] = {
     val rootVertex = getUrl(url).get //graph.getVertices("location",url).iterator()
     val traverser = new BFSTraverser(rootVertex, limit)
@@ -142,6 +160,7 @@ class TitanDBService(recreateDb: Boolean) {
     //add v to closed set?
 
     def traverse(): List[Url] = {
+      //verify()
       val startUrl = Transformers.vertex2Url(startVertex)
       if (startUrl.status == UrlStatus.New) {
         urls += startUrl
@@ -153,7 +172,7 @@ class TitanDBService(recreateDb: Boolean) {
         queue = queue.tail
         currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
           if (!(closedSet contains (v))) {
-            closedSet+=v
+            closedSet += v
             val url = Transformers.vertex2Url(v)
             if (url.status == UrlStatus.New) {
               urls += url
