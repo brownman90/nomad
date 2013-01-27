@@ -16,7 +16,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
   private val extractedLinks = new ListBuffer[RawUrlRelation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
-  private val BFS_LIMIT = 1000
+  private val BFS_LIMIT = 5000
   private val EXTRACTED_LINKS_LIMIT = 30000
 
 

@@ -23,7 +23,7 @@ class Master {
 
   private val logger = LogManager.getLogger(this.getClass.getName)
 
-  private val MAX_THREADS = 10
+  private val MAX_THREADS = 5
   private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
@@ -35,7 +35,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://aclweb.org", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 

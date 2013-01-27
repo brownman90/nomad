@@ -129,62 +129,39 @@ class TitanDBService(recreateDb: Boolean) {
     private val urls = new mutable.Queue[Url]
 
     //recursive
+
+    /*
+       node with NEW status - to urls
+       node with any status  - to closedSet
+       node with status=COMPLETE - to queue
+
+       if status - complete - iterate over child
+          add all new to query
+
+     */
+    //add v to closed set?
+
     def traverse(): List[Url] = {
       val startUrl = Transformers.vertex2Url(startVertex)
       if (startUrl.status == UrlStatus.New) {
         urls += startUrl
       }
       queue += startVertex
-      val depthLimit = 10
+      val depthLimit = 10 //TODO implement usage!!!
       while (queue.size > 0 && urls.size < limit) {
-        //correct?
         val currentVertex = queue.front
         queue = queue.tail
-        /*
-           node with NEW status - to urls
-           node with any status  - to closedSet
-           node with status=COMPLETE - to queue
-
-           if status - complete - iterate over child
-              add all new to query
-
-         */
         currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
           if (!(closedSet contains (v))) {
-            /*this is workaround. By some reasons sometimes vertex is returned without properties
-            Solution: if there is no properties:
-               return None
-               set status to New
-
-             on next traverse:
-                 if status==New But has child - set status to Complete
-                    skip vertex
-             */
-            val statusProperty = v.getProperty("status")
-            if (statusProperty == null) {
-              if (v.getVertices(Direction.OUT, "relation").size > 0) {
-                //mark as complete // or in progress???
-                v.setProperty("status", UrlStatus.Complete.toString)
-                queue += v
-              } else {
-                //no child, so this is our guy
-                //mark as new
-                v.setProperty("status", UrlStatus.New.toString)
-                //process
-                urls += Transformers.vertex2Url(v)
-              }
-              logger.error("vertex " + v.getId + " contatins null properties")
-            } else {
-              val url = Transformers.vertex2Url(v)
-              if (url.status == UrlStatus.New) {
-                urls += url
-              } else if (url.status == UrlStatus.Complete) {
-                queue += v
-              }
+            closedSet+=v
+            val url = Transformers.vertex2Url(v)
+            if (url.status == UrlStatus.New) {
+              urls += url
+            } else if (url.status == UrlStatus.Complete) {
+              queue += v
             }
           }
         })
-        closedSet += currentVertex
       }
       urls.toList
     }
