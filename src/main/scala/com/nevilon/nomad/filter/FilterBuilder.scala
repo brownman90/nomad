@@ -13,6 +13,14 @@ import crawlercommons.fetcher.UserAgent
  */
 object FilterProcessorFactory {
 
+  /*
+    build something like filter function?
+    use pipeline?
+    pass to next everything not processed by current filter
+
+   */
+
+  //this is domain, not start url!!!!
   def get(domain: String): FilterProcessor = {
     class FilterProcessorWithConstructor extends FilterProcessor with FilterProcessorConstructor
     val fps = new FilterProcessorWithConstructor
@@ -20,9 +28,15 @@ object FilterProcessorFactory {
     //fps.addEntityFilter()
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
+    fps.addUrlFilter(new EndFilter)
     fps
   }
 
+}
+
+
+class EndFilter extends UrlFilter {
+  def filter(url: String): Option[Action.Action] = Some(Action.Download)
 }
 
 
@@ -38,21 +52,17 @@ class RobotsUrlFilter(domain: String) extends UrlFilter {
 
   }
 
-  val robotsUrl = new URL(domain + RobotsConfig.ROBOTS_TXT)
-  val parser = new SimpleRobotRulesParser()
-  val userAgent = new UserAgent(RobotsConfig.CRAWLER_NAME, RobotsConfig.CRAWLER_EMAIL, RobotsConfig.CRAWLER_PAGE)
-  val fetcher = RobotUtils.createFetcher(userAgent, 1)
-  val rules = RobotUtils.getRobotRules(fetcher, parser, robotsUrl)
+  private val robotsUrl = new URL(domain + RobotsConfig.ROBOTS_TXT)
+  private val parser = new SimpleRobotRulesParser()
+  private val userAgent = new UserAgent(RobotsConfig.CRAWLER_NAME, RobotsConfig.CRAWLER_EMAIL, RobotsConfig.CRAWLER_PAGE)
+  private val fetcher = RobotUtils.createFetcher(userAgent, 1)
+  private val rules = RobotUtils.getRobotRules(fetcher, parser, robotsUrl)
 
 
   import Action._
 
-  override def filter(url: String): Action = {
-    if (rules.isAllowed(url)) {
-      Action.Download
-    } else {
-      Action.Skip
-    }
+  override def filter(url: String): Option[Action] = {
+    if (rules.isAllowed(url)) Some(Action.Download) else Some(Action.Skip)
   }
 }
 
@@ -61,12 +71,18 @@ class FilterProcessor extends AbsFilterProcessor {
 
   import Action._
 
-  def filterUrl(url: String):List[Action]= {
-    var results = new ListBuffer[Action]
-    urlFilters.foreach(urlFilter => {
-      results+=urlFilter.filter(url)
-    })
-    results.toList
+  def filterUrl(url: String): Action = {
+    //add defaultEmptyFilter = always returns DOWNLOAD!
+    var result = Action.None
+    for (i <- 0 until urlFilters.length if result == None) {
+      urlFilters(i).filter(url) match {
+        case scala.None => {}
+        case Some(action) => {
+          result = action
+        }
+      }
+    }
+    result
   }
 
   def filterEntity() {}
@@ -97,7 +113,7 @@ trait FilterProcessorConstructor extends AbsFilterProcessor {
 
 object Action extends Enumeration {
   type Action = Value
-  val Download, Skip = Value
+  val Download, Skip, None = Value
 }
 
 
@@ -105,7 +121,7 @@ trait UrlFilter extends Filter {
 
   import Action._
 
-  def filter(url: String): Action
+  def filter(url: String): Option[Action]
 
 }
 

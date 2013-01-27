@@ -17,6 +17,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
   private val BFS_LIMIT = 1000
+  private val EXTRACTED_LINKS_LIMIT = 30000
 
 
   private val logger = LogManager.getLogger(this.getClass.getName)
@@ -71,7 +72,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
-    val bfsLinks = dbService.getBFSLinks(startUrl, 1000)
+    val bfsLinks = dbService.getBFSLinks(startUrl, EXTRACTED_LINKS_LIMIT)
     logger.info("bfs links loaded: "+BFS_LIMIT)
     bfsLinks.toList
   }

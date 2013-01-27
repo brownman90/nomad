@@ -1,6 +1,7 @@
 package com.nevilon.nomad.crawler
 
 import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
+import com.nevilon.nomad.filter.Action
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,14 +11,14 @@ import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
  */
 
 
-class RawUrlRelation(val from: String, val to: String) {
+class RawUrlRelation(val from: String, val to: String, val action: Action.Action) {
 
   override def equals(obj: Any): Boolean = {
     if (obj.isInstanceOf[RawUrlRelation]) {
       val other = obj.asInstanceOf[RawUrlRelation]
       new EqualsBuilder()
         .append(from, other.from)
-        .append(to, other.to)
+        .append(to, other.to)//add Action?
         .isEquals()
     } else {
       false
@@ -27,7 +28,7 @@ class RawUrlRelation(val from: String, val to: String) {
   override def hashCode(): Int = {
     new HashCodeBuilder()
       .append(from)
-      .append(to)
+      .append(to)//add action?
       .toHashCode()
   }
 

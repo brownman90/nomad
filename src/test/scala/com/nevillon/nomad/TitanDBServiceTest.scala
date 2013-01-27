@@ -5,6 +5,7 @@ import com.nevilon.nomad.storage.graph.TitanDBService
 import collection.mutable.ListBuffer
 import com.tinkerpop.blueprints.Direction
 import com.nevilon.nomad.crawler.RawUrlRelation
+import com.nevilon.nomad.filter.Action
 
 /**
  * Created with IntelliJ IDEA.
@@ -36,9 +37,9 @@ class TitanDBServiceTest {
     val url_3 = service.addUrl("http://lenta.ru/3")
     //make connections
     val relations = new ListBuffer[RawUrlRelation]
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1"))
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/2"))
-    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/3"))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/2",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/3",Action.None))
     //linkify
     service.linkUrls(relations.toList)
     //check if created!
@@ -51,7 +52,7 @@ class TitanDBServiceTest {
         import scala.collection.JavaConversions._
         val it = vertex.getVertices(Direction.OUT, "relation").iterator()
         for (v <- it) {
-          extractedRelations += (new RawUrlRelation("http://lenta.ru/", v.getProperty("location").toString))
+          extractedRelations += (new RawUrlRelation("http://lenta.ru/", v.getProperty("location").toString,Action.None))
         }
       }
     }
@@ -62,7 +63,7 @@ class TitanDBServiceTest {
         import scala.collection.JavaConversions._
         val it = vertex.getVertices(Direction.OUT, "relation").iterator()
         for (v <- it) {
-          extractedRelations += (new RawUrlRelation("http://lenta.ru/2", v.getProperty("location").toString))
+          extractedRelations += (new RawUrlRelation("http://lenta.ru/2", v.getProperty("location").toString,Action.None))
         }
       }
     }
@@ -84,11 +85,11 @@ class TitanDBServiceTest {
 
     //make connections
     val relations = new ListBuffer[RawUrlRelation]
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1"))
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/5"))
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/2"))
-    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/3"))
-    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/4"))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/5",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/2",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/3",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/4",Action.None))
     //linkify
     service.linkUrls(relations.toList)
     //traverse
@@ -101,16 +102,16 @@ class TitanDBServiceTest {
 
   @Test def groupDuplicatesTest(){
     val relations = new ListBuffer[RawUrlRelation]
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1"))
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1"))
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/5"))
-    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/2"))
-    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/3"))
-    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/4"))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/5",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/2",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/3",Action.None))
+    relations += (new RawUrlRelation("http://lenta.ru/2", "http://lenta.ru/4",Action.None))
     val counts = relations.groupBy(w => w.to).mapValues(_.size)
     val distincts = relations.distinct
-    val first = new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1")
-    val second = new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1")
+    val first = new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1",Action.None)
+    val second = new RawUrlRelation("http://lenta.ru/", "http://lenta.ru/1",Action.None)
   }
 
 

@@ -10,7 +10,7 @@ import org.apache.http.util.EntityUtils
 import scala.util.Success
 import org.apache.log4j.LogManager
 import com.nevilon.nomad.storage.graph.TitanDBService
-import com.nevilon.nomad.filter.{FilterProcessor, FilterProcessorFactory}
+import com.nevilon.nomad.filter.{Action, FilterProcessor, FilterProcessorFactory}
 
 /**
  * Created with IntelliJ IDEA.
@@ -24,7 +24,7 @@ class Master {
   private val logger = LogManager.getLogger(this.getClass.getName)
 
   private val MAX_THREADS = 10
-  private val NUM_OF_DOMAINS = 3
+  private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
   private val dbService = new TitanDBService(true) //DBService
@@ -35,7 +35,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://aaai.org", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -53,9 +53,12 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
   private val linkProvider = new LinkProvider(startUrl, dbService)
   private val linkExtractor = new LinkExtractor
-  private val filterProcessor = FilterProcessorFactory.get(startUrl)
-
   private var futures = new ListBuffer[Future[List[RawUrlRelation]]]
+
+
+  private val domain = URLUtils.normalize(URLUtils.getDomainName(startUrl))
+  private val filterProcessor = FilterProcessorFactory.get(domain)
+
 
   def stop() {}
 
@@ -96,14 +99,27 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           logger.info("links extracted: " + links.length + " from " + parentLink)
         }
       }
-
-      //  dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
-      val rawLinks = links.map(link => {
-        new RawUrlRelation(parentLink, link)
+      //build urlrelations objects
+      val rawUrlRelations = links.map(link => {
+        new RawUrlRelation(parentLink, link, Action.None)
       })
-      URLUtils.clearLinks(startUrl, rawLinks.toList)
-      //filter links
-
+      //remove invalid links
+      val clearedLinks = URLUtils.clearUrlRelations(startUrl, rawUrlRelations.toList)
+      //pass to filter
+      val filteredRawUrlRelations = clearedLinks.map(link => {
+        val action = filterProcessor.filterUrl(link.to)
+        new RawUrlRelation(link.from, link.to, action)
+      })
+      //remove all links we needn't to crawl
+      val linksToProcess = filteredRawUrlRelations.filter(url => {
+        if (url.action == Action.Download) {
+          true
+        } else {
+          logger.info("skipped url " + url.to)
+          false
+        }
+      })
+      linksToProcess
     }
 
     thisFuture onComplete {

@@ -2,6 +2,7 @@ package com.nevilon.nomad.crawler
 
 import java.net.URI
 import org.apache.log4j.LogManager
+import com.nevilon.nomad.filter.Action
 
 /**
  * Created with IntelliJ IDEA.
@@ -42,23 +43,23 @@ object URLUtils {
   }
 
 
-  def clearLinks(startUrl:String,linksToClear: List[RawUrlRelation]): List[RawUrlRelation] = {
-    var clearedLinks = List[RawUrlRelation]()
-    //remove email links
-    clearedLinks = linksToClear.filter(url => !url.to.contains("@"))
-    clearedLinks = clearedLinks.filter(url => !url.to.startsWith("mailto:"))
+  def clearUrlRelations(startUrl: String, linksToClear: List[RawUrlRelation]): List[RawUrlRelation] = {
+    var clearedUrlRelations = List[RawUrlRelation]()
+    clearedUrlRelations = linksToClear.
+      filter(urlRelation => !urlRelation.to.contains("@")).
+      filter(urlRelation => !urlRelation.to.startsWith("mailto:")).
+      filter(urlRelation => !urlRelation.to.trim().isEmpty)
     //remove empty links
-    clearedLinks = clearedLinks.filter(newLink => !newLink.to.trim().isEmpty)
     //normalization
     //normalize from?
-    clearedLinks = clearedLinks.map(newLink => new RawUrlRelation(newLink.from, URLUtils.normalize(newLink.to)))
-    clearedLinks = clearedLinks.filter(newLink => !newLink.from.equals(newLink.to)) // check this!!!!)
+    clearedUrlRelations = clearedUrlRelations.map(urlRelation => new RawUrlRelation(urlRelation.from, URLUtils.normalize(urlRelation.to), Action.None))
+    clearedUrlRelations = clearedUrlRelations.filter(urlRelation => !urlRelation.from.equals(urlRelation.to)) // check this!!!!)
     //remove links to another domains
-    clearedLinks = clearedLinks.filter(newLink => {
+    clearedUrlRelations = clearedUrlRelations.filter(urlRelation => {
       try {
         //accept links from this domain only!
         val startDomain = URLUtils.getDomainName(startUrl)
-        val linkDomain = URLUtils.getDomainName(newLink.to)
+        val linkDomain = URLUtils.getDomainName(urlRelation.to)
         startDomain.equals(linkDomain)
       }
       catch {
@@ -69,7 +70,7 @@ object URLUtils {
       }
     })
     //remove duplicates
-    clearedLinks.distinct
+    clearedUrlRelations.distinct
   }
 
 }
