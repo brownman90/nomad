@@ -201,68 +201,6 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     }
   }
 
-  /*
-
-  private def load(httpClient: HttpClient, httpGet: HttpGet, id: Int, context: BasicHttpContext): (String, String) = {
-    logger.info("connecting to " + httpGet.getURI)
-    try {
-      val response: HttpResponse = httpClient.execute(httpGet, context)
-      val entity: HttpEntity = response.getEntity
-      val result = EntityUtils.toString(entity)
-      EntityUtils.consume(entity)
-      httpGet.abort()
-      (entity.getContentType.getValue, result)
-    }
-    catch {
-      case e: Exception => {
-        logger.info("error during crawling " + httpGet.getURI, e)
-        httpGet.abort()
-      }
-      ("", "")
-    }
-  }
-
-  */
-
-}
-
-//pass functions here?
-class Downloader(maxThreads: Int, filter: (EntityParams) => Boolean, saver: (InputStream) => Unit) {
-
-  private val logger = LogManager.getLogger(this.getClass.getName)
-  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads)
-
-  private def buildEntityParams(httpEntity: HttpEntity, url: String): EntityParams = {
-    val mimeType = new MimeType(httpEntity.getContentType.getValue)
-    val entityParams = new EntityParams(httpEntity.getContentLength, url, mimeType)
-    entityParams
-  }
-
-  //filter function - params(headers or parser headers)
-  //saver function - params, return stream
-  def load(url: String) {
-    logger.info("connecting to " + url)
-    val httpGet = new HttpGet(url)
-    try {
-      val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
-      val entity: HttpEntity = response.getEntity
-      val entityParams = buildEntityParams(entity, url)
-      if (!filter(entityParams)) {
-        //accept
-        saver(entity.getContent)
-      }
-      //how to skip current fetch?
-      EntityUtils.consume(entity)
-      httpGet.abort()
-    }
-    catch {
-      case e: Exception => {
-        logger.info("error during crawling " + url, e)
-        httpGet.abort()
-      }
-    }
-  }
-
 }
 
 class EntityParams(size: Long, url: String, val mimeType: MimeType)
