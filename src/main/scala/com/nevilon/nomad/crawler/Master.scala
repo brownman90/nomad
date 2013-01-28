@@ -11,6 +11,8 @@ import scala.util.Success
 import org.apache.log4j.LogManager
 import com.nevilon.nomad.storage.graph.TitanDBService
 import com.nevilon.nomad.filter.{Action, FilterProcessor, FilterProcessorFactory}
+import javax.activation.MimeType
+import java.io.InputStream
 
 /**
  * Created with IntelliJ IDEA.
@@ -79,26 +81,70 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     initCrawling()
   }
 
-  //implement statistics object
+
   private var count = 0
 
+
+  private val saver = (inputStream: InputStream) => {
+
+  }
+  private val filter = (entityParams: EntityParams) => {
+    true
+  }
+
+
+  private def buildEntityParams(httpEntity: HttpEntity, url: String): EntityParams = {
+    val mimeType = new MimeType(httpEntity.getContentType.getValue)
+    val entityParams = new EntityParams(httpEntity.getContentLength, url, mimeType)
+    entityParams
+  }
+
+
+  private def download(url: String): List[String] = {
+    var links = ListBuffer[String]()
+    val httpGet = new HttpGet(url)
+
+    logger.info("connecting to " + url)
+    try {
+      val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
+      val entity: HttpEntity = response.getEntity
+      val entityParams = buildEntityParams(entity, url)
+      if (filter(entityParams)) {
+        //accept
+        //filter - SKIP or DOWNLOAD
+        //check entity type
+        if (entityParams.mimeType.getSubType.contains("html")) {
+          links = linkExtractor.extractLinks(EntityUtils.toString(entity), url)
+          logger.info("links extracted: " + links.length + " from " + url)
+          //extract links
+          //save
+        } else {
+          //save
+        }
+      } else {
+        //???
+      }
+      //how to skip current fetch?
+      EntityUtils.consume(entity)
+      httpGet.abort()
+    }
+    catch {
+      case e: Exception => {
+        logger.info("error during crawling " + url, e)
+        httpGet.abort()
+      }
+    }
+
+    count += 1
+
+    logger.info("total crawled: " + count)
+    links.toList
+  }
 
   private def crawlUrl(parentLink: String, filterProcessor: FilterProcessor): Future[List[RawUrlRelation]] = {
     implicit val ec = ExecutionContext.Implicits.global
     val thisFuture = future[List[RawUrlRelation]] {
-      var links = ListBuffer[String]()
-      try {
-        count += 1
-        val httpGet = new HttpGet(parentLink)
-        logger.info("total crawled: " + count)
-        val data = load(httpClient, httpGet, 0, new BasicHttpContext())
-        //check mime type
-        if (data._1.contains("html")) {
-          //clean and normalize
-          links = linkExtractor.extractLinks(data._2, parentLink)
-          logger.info("links extracted: " + links.length + " from " + parentLink)
-        }
-      }
+      val links = download(parentLink)
       //build urlrelations objects
       val rawUrlRelations = links.map(link => {
         new RawUrlRelation(parentLink, link, Action.None)
@@ -128,13 +174,9 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
         synchronized {
           dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
           futures -= thisFuture
-
-          rawLinks.foreach(rawLinks => {
-            linkProvider.addToExtractedLinks(rawLinks)
-          })
+          rawLinks.foreach(linkProvider.addToExtractedLinks(_))
           initCrawling()
         }
-
       }
       case _ => logger.error("some king of shit during crawling " + parentLink)
     }
@@ -159,6 +201,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     }
   }
 
+  /*
 
   private def load(httpClient: HttpClient, httpGet: HttpGet, id: Int, context: BasicHttpContext): (String, String) = {
     logger.info("connecting to " + httpGet.getURI)
@@ -179,5 +222,48 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     }
   }
 
+  */
 
 }
+
+//pass functions here?
+class Downloader(maxThreads: Int, filter: (EntityParams) => Boolean, saver: (InputStream) => Unit) {
+
+  private val logger = LogManager.getLogger(this.getClass.getName)
+  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads)
+
+  private def buildEntityParams(httpEntity: HttpEntity, url: String): EntityParams = {
+    val mimeType = new MimeType(httpEntity.getContentType.getValue)
+    val entityParams = new EntityParams(httpEntity.getContentLength, url, mimeType)
+    entityParams
+  }
+
+  //filter function - params(headers or parser headers)
+  //saver function - params, return stream
+  def load(url: String) {
+    logger.info("connecting to " + url)
+    val httpGet = new HttpGet(url)
+    try {
+      val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
+      val entity: HttpEntity = response.getEntity
+      val entityParams = buildEntityParams(entity, url)
+      if (!filter(entityParams)) {
+        //accept
+        saver(entity.getContent)
+      }
+      //how to skip current fetch?
+      EntityUtils.consume(entity)
+      httpGet.abort()
+    }
+    catch {
+      case e: Exception => {
+        logger.info("error during crawling " + url, e)
+        httpGet.abort()
+      }
+    }
+  }
+
+}
+
+class EntityParams(size: Long, url: String, val mimeType: MimeType)
+
