@@ -3,6 +3,7 @@ package com.nevilon.nomad.filter
 import groovy.lang.{GroovyObject, GroovyClassLoader}
 import java.io.File
 import collection.mutable.ListBuffer
+import com.nevilon.nomad.crawler.EntityParams
 
 /**
  * Created with IntelliJ IDEA.
@@ -32,9 +33,29 @@ class GroovyScriptingFilter extends UrlFilter {
   }
 }
 
+
+class GroovyEntityFilter extends EntityFilter {
+
+  private val engine = new GroovyFilterEngine[EntityParams]("filterEntity") {
+    def mapArgs(t: EntityParams): List[AnyRef] = {
+      List(t.size, t.url, t.mimeType).asInstanceOf[List[AnyRef]]
+    }
+  }
+
+
+  def filter(entityParams: EntityParams): Option[Action.Action] = {
+    engine.filter(entityParams)
+  }
+}
+
+
 class GroovyUrlFilter extends UrlFilter {
 
-  private val engine = new GroovyFilterEngine[String]("filterUrl")
+  private val engine = new GroovyFilterEngine[String]("filterUrl") {
+    def mapArgs(t: String): List[AnyRef] = {
+      List[AnyRef](t)
+    }
+  }
 
   def filter(url: String): Option[Action.Action] = {
     engine.filter(url)
@@ -43,7 +64,7 @@ class GroovyUrlFilter extends UrlFilter {
 }
 
 
-class GroovyFilterEngine[T](filterMethodName: String) {
+abstract class GroovyFilterEngine[T](filterMethodName: String) {
 
   private var groovyObject: GroovyObject = null
 
@@ -58,8 +79,16 @@ class GroovyFilterEngine[T](filterMethodName: String) {
     groovyObject = groovyClass.newInstance().asInstanceOf[GroovyObject]
   }
 
+  def mapArgs(t: T): List[AnyRef]
+
   def filter(t: T): Option[Action.Action] = {
-    val result = groovyObject.invokeMethod(filterMethodName, ListBuffer[AnyRef](t.asInstanceOf[AnyRef]).toArray[AnyRef])
+   // val data = List(1, 2, 3)
+
+   // val args = (data.map(_.asInstanceOf[AnyRef]))
+   // groovyObject.invokeMethod("echo", args.toArray[AnyRef])
+
+
+    val result = groovyObject.invokeMethod(filterMethodName, mapArgs(t).map(_.asInstanceOf[AnyRef]).toArray[AnyRef])
     if (!result.asInstanceOf[Boolean]) {
       Some(Action.Skip)
     } else None

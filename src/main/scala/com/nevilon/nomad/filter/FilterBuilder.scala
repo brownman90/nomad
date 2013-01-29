@@ -26,7 +26,10 @@ object FilterProcessorFactory {
     class FilterProcessorWithConstructor extends FilterProcessor with FilterProcessorConstructor
     val fps = new FilterProcessorWithConstructor
 
-    //fps.addEntityFilter()
+    fps.addEntityFilter(new GroovyEntityFilter)
+    fps.addEntityFilter(new EndEntityFilter)
+
+
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
     fps.addUrlFilter(new GroovyUrlFilter)
@@ -56,7 +59,7 @@ class FilterProcessor extends AbsFilterProcessor {
   }
 
   //sorry for copypast, I need some additional time to create nice solution
-  def filterEntity(entityParams:EntityParams):Action = {
+  def filterEntity(entityParams: EntityParams): Action = {
     var result = Action.None
     for (i <- 0 until entityFilters.length if result == None) {
       entityFilters(i).filter(entityParams) match {
@@ -110,7 +113,8 @@ trait UrlFilter extends Filter {
 trait EntityFilter extends Filter {
 
   import Action._
-  def filter(entityParams:EntityParams):Option[Action]
+
+  def filter(entityParams: EntityParams): Option[Action]
 
 }
 

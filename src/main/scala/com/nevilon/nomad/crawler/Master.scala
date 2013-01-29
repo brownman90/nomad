@@ -37,7 +37,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://lenta.ru/", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -89,7 +89,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
   }
   private val filter = (entityParams: EntityParams) => {
-    true
+    filterProcessor.filterEntity(entityParams)
   }
 
 
@@ -109,7 +109,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
       val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
       val entity: HttpEntity = response.getEntity
       val entityParams = buildEntityParams(entity, url)
-      if (filter(entityParams)) {
+      if (filterProcessor.filterEntity(entityParams)==Action.Download) {
         //accept
         //filter - SKIP or DOWNLOAD
         //check entity type
@@ -122,6 +122,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           //save
         }
       } else {
+        println("skip " + url)
         //???
       }
       //how to skip current fetch?
@@ -203,5 +204,5 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
 }
 
-class EntityParams(size: Long, url: String, val mimeType: MimeType)
+class EntityParams(val size: Long,val url: String, val mimeType: MimeType)
 
