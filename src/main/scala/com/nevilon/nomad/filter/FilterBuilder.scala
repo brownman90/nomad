@@ -4,6 +4,7 @@ import collection.mutable.ListBuffer
 import java.net.URL
 import crawlercommons.robots.{RobotUtils, SimpleRobotRulesParser}
 import crawlercommons.fetcher.UserAgent
+import com.nevilon.nomad.crawler.EntityParams
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,7 +29,7 @@ object FilterProcessorFactory {
     //fps.addEntityFilter()
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
-    fps.addUrlFilter(new GroovyScriptingFilter)
+    fps.addUrlFilter(new GroovyUrlFilter)
     fps.addUrlFilter(new EndFilter)
     fps
   }
@@ -54,7 +55,19 @@ class FilterProcessor extends AbsFilterProcessor {
     result
   }
 
-  def filterEntity() {}
+  //sorry for copypast, I need some additional time to create nice solution
+  def filterEntity(entityParams:EntityParams):Action = {
+    var result = Action.None
+    for (i <- 0 until entityFilters.length if result == None) {
+      entityFilters(i).filter(entityParams) match {
+        case scala.None => {}
+        case Some(action) => {
+          result = action
+        }
+      }
+    }
+    result
+  }
 
 
 }
@@ -96,7 +109,8 @@ trait UrlFilter extends Filter {
 
 trait EntityFilter extends Filter {
 
-  def filter()
+  import Action._
+  def filter(entityParams:EntityParams):Option[Action]
 
 }
 
