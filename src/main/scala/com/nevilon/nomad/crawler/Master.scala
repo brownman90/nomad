@@ -12,7 +12,8 @@ import org.apache.log4j.LogManager
 import com.nevilon.nomad.storage.graph.TitanDBService
 import com.nevilon.nomad.filter.{Action, FilterProcessor, FilterProcessorFactory}
 import javax.activation.MimeType
-import java.io.InputStream
+import java.io.{File, FileOutputStream, InputStream}
+import org.apache.commons.io.FileUtils
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,7 +26,9 @@ class Master {
 
   private val logger = LogManager.getLogger(this.getClass.getName)
 
-  private val MAX_THREADS = 5
+  //add delay?
+  //headers like in browser
+  private val MAX_THREADS = 7
   private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
@@ -37,7 +40,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://lenta.ru/", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://researcher.watson.ibm.com/", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -109,7 +112,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
       val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
       val entity: HttpEntity = response.getEntity
       val entityParams = buildEntityParams(entity, url)
-      if (filterProcessor.filterEntity(entityParams)==Action.Download) {
+      if (filterProcessor.filterEntity(entityParams) == Action.Download) {
         //accept
         //filter - SKIP or DOWNLOAD
         //check entity type
@@ -119,10 +122,21 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           //extract links
           //save
         } else {
+
+
+          val path = url.replaceAll("/", "_")
+          val out = new FileOutputStream(new File("/tmp/cons/" + path))
+
+          Iterator
+            .continually(entity.getContent.read)
+            .takeWhile(-1 !=)
+            .foreach(out.write)
+
+          out.close()
           //save
         }
       } else {
-        println("skip " + url)
+        logger.info("skip " + url)
         //???
       }
       //how to skip current fetch?
@@ -204,5 +218,5 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
 }
 
-class EntityParams(val size: Long,val url: String, val mimeType: MimeType)
+class EntityParams(val size: Long, val url: String, val mimeType: MimeType)
 

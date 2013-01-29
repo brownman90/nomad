@@ -15,7 +15,7 @@ def filterUrl(url) {
 }
 
 def filterEntity(size, url, mimeType) {
-    if (size > 1000000) {
+    if (size > 20000000) {
         return false
     }
     return true
