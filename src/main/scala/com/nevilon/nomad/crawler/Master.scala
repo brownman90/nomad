@@ -14,6 +14,8 @@ import com.nevilon.nomad.filter.{Action, FilterProcessor, FilterProcessorFactory
 import javax.activation.MimeType
 import java.io.{ByteArrayInputStream, File, FileOutputStream, InputStream}
 import org.apache.commons.io.FileUtils
+import org.apache.http.client.utils.URLEncodedUtils
+import org.apache.commons.httpclient.util.URIUtil
 
 /**
  * Created with IntelliJ IDEA.
@@ -40,7 +42,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://lenta.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -103,9 +105,12 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
   private def download(url: String): List[String] = {
     var links = ListBuffer[String]()
-    val httpGet = new HttpGet(url)
+    //encode to escape special symbols
 
-    logger.info("connecting to " + url)
+    val encodedUrl = URIUtil.encodeQuery(url)
+    val httpGet = new HttpGet(encodedUrl)
+
+    logger.info("connecting to " + encodedUrl)
     try {
       val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
       val entity: HttpEntity = response.getEntity
@@ -124,7 +129,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           saveContent(is, url, entityParams.mimeType.getBaseType)
         } else {
           //save file
-          saveContent(entity.getContent, url,entityParams.mimeType.getBaseType)
+          saveContent(entity.getContent, url, entityParams.mimeType.getBaseType)
         }
       } else {
         logger.info("skip " + url)

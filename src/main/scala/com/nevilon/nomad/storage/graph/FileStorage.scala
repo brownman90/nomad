@@ -16,6 +16,7 @@ import java.io.{InputStream, FileInputStream}
 class FileStorage {
   /*
      what about autoclean param on each start?
+     check for file existence?
 
    */
   private val DB_NAME = "nomad"

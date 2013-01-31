@@ -3,6 +3,7 @@ package com.nevilon.nomad.crawler
 import java.net.URI
 import org.apache.log4j.LogManager
 import com.nevilon.nomad.filter.Action
+import org.apache.commons.httpclient.util.URIUtil
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,10 +29,11 @@ object URLUtils {
     if (url.contains("#")) {
       url = url.substring(0, url.indexOf("#"))
     }
-    url
+    URIUtil.encodeQuery(url)
   }
 
   def getDomainName(url: String): String = {
+    //NPE on urls like http://правительство.рф/gov/results/22601
     val uri = new URI(url.toLowerCase)
     val domain = uri.getHost
     //println(url)
