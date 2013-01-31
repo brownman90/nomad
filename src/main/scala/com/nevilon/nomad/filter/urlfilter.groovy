@@ -1,14 +1,18 @@
 def filterUrl(url) {
-   // if (url.contains(".pdf")) {
-   //     return false
-   // }
+    // if (url.contains(".pdf")) {
+    //     return false
+    // }
+    if (url.contains("http://consc.net/online/")) {
+        return false
+    }
+
     if (url.contains("http://aclweb.org/adminwiki/") || url.contains("http://aclweb.org/aclwiki")) {
         return false
     }
-    if (url.contains("http://nlp.stanford.edu/mediawiki/")){
+    if (url.contains("http://nlp.stanford.edu/mediawiki/")) {
         return false
     }
-    if (url.contains("http://nlp.stanford.edu/nlp/javadoc")){
+    if (url.contains("http://nlp.stanford.edu/nlp/javadoc")) {
         return false
     }
     return true

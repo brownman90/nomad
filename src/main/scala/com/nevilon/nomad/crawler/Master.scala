@@ -9,10 +9,10 @@ import org.apache.http.{HttpEntity, HttpResponse}
 import org.apache.http.util.EntityUtils
 import scala.util.Success
 import org.apache.log4j.LogManager
-import com.nevilon.nomad.storage.graph.TitanDBService
+import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
 import com.nevilon.nomad.filter.{Action, FilterProcessor, FilterProcessorFactory}
 import javax.activation.MimeType
-import java.io.{File, FileOutputStream, InputStream}
+import java.io.{ByteArrayInputStream, File, FileOutputStream, InputStream}
 import org.apache.commons.io.FileUtils
 
 /**
@@ -40,7 +40,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://researcher.watson.ibm.com/", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -53,6 +53,8 @@ class Master {
 
 //use startUrl, not domain!!!
 class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) {
+
+  private val fileStorage = new FileStorage()
 
   private val logger = LogManager.getLogger(this.getClass.getName)
 
@@ -88,20 +90,16 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private var count = 0
 
 
-  private val saver = (inputStream: InputStream) => {
-
-  }
-  private val filter = (entityParams: EntityParams) => {
-    filterProcessor.filterEntity(entityParams)
-  }
-
-
   private def buildEntityParams(httpEntity: HttpEntity, url: String): EntityParams = {
     val mimeType = new MimeType(httpEntity.getContentType.getValue)
     val entityParams = new EntityParams(httpEntity.getContentLength, url, mimeType)
     entityParams
   }
 
+
+  private def saveContent(is: InputStream, url: String, contentType: String) {
+    fileStorage.saveStream(is, url, contentType)
+  }
 
   private def download(url: String): List[String] = {
     var links = ListBuffer[String]()
@@ -117,29 +115,22 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
         //filter - SKIP or DOWNLOAD
         //check entity type
         if (entityParams.mimeType.getSubType.contains("html")) {
-          links = linkExtractor.extractLinks(EntityUtils.toString(entity), url)
+          val strContent = EntityUtils.toString(entity)
+          //extract links from page
+          links = linkExtractor.extractLinks(strContent, url)
           logger.info("links extracted: " + links.length + " from " + url)
-          //extract links
-          //save
+          //save content
+          val is: InputStream = new ByteArrayInputStream(strContent.getBytes)
+          saveContent(is, url, entityParams.mimeType.getBaseType)
         } else {
-
-
-          val path = url.replaceAll("/", "_")
-          val out = new FileOutputStream(new File("/tmp/cons/" + path))
-
-          Iterator
-            .continually(entity.getContent.read)
-            .takeWhile(-1 !=)
-            .foreach(out.write)
-
-          out.close()
-          //save
+          //save file
+          saveContent(entity.getContent, url,entityParams.mimeType.getBaseType)
         }
       } else {
         logger.info("skip " + url)
         //???
       }
-      //how to skip current fetch?
+      //how to skip current fetched entity?
       EntityUtils.consume(entity)
       httpGet.abort()
     }
