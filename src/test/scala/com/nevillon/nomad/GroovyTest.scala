@@ -29,7 +29,7 @@ class GroovyTest {
     val args = new ListBuffer[Object]
     //val start = System.currentTimeMillis()
     for(i<-1 to 1000000){
-      val tmp = groovyObject.invokeMethod("filterUrl", ListBuffer[AnyRef]("from","to").toArray[AnyRef])
+      val tmp = groovyObject.invokeMethod("filterUrl", ListBuffer[AnyRef]("from").toArray[AnyRef])
       //println(tmp)
     }
     //println(System.currentTimeMillis()-start)
