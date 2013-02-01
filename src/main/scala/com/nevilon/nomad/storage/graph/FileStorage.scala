@@ -37,11 +37,17 @@ class FileStorage {
     gridfs = GridFS(mongoDB)
   }
 
-  def saveStream(is: InputStream, url: String, contentType: String) {
+  def saveStream(is: InputStream, url: String, contentType: String): Option[String] = {
     gridfs(is) {
       file =>
         file.contentType = contentType
         file.filename = url
+    }
+    match {
+      case None => None //throw exception or None?
+      case Some(objectId) => {
+        Some(objectId.asInstanceOf[ObjectId].toString)
+      }
     }
   }
 
