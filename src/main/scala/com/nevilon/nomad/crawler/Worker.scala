@@ -32,7 +32,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
   private val linkProvider = new LinkProvider(startUrl, dbService)
   private val linkExtractor = new LinkExtractor
-  private var futures = new ListBuffer[Future[Option[ExtractedData]]]
+  private var futures = new ListBuffer[Future[ExtractedData]]
 
   private val domain = URLUtils.normalize(URLUtils.getDomainName(startUrl))
   private val filterProcessor = FilterProcessorFactory.get(domain)
@@ -113,10 +113,10 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     }
   }
 
-  private def crawlUrl(url: Url, filterProcessor: FilterProcessor): Future[Option[ExtractedData]] = {
+  private def crawlUrl(url: Url, filterProcessor: FilterProcessor): Future[ExtractedData] = {
     implicit val ec = ExecutionContext.Implicits.global
     val location = url.location
-    val thisFuture = future[Option[ExtractedData]] {
+    val thisFuture = future[ExtractedData] {
       val fetchedContent = fetch(location)
       count += 1
       logger.info("total crawled: " + count)
@@ -126,10 +126,10 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           throw new RuntimeException("shit!")
         } //exception
         case Some(value) => {
-          //match value.content for None!!!
           value.content match {
             case null => {
-              None
+              // this is a case for non html data, but we still need process fileId!
+              new ExtractedData(null, value)
             }
             case content => {
               val links = linkExtractor.extractLinks(value.content, location)
@@ -146,13 +146,14 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
               //remove all links we needn't to crawl
               val linksToProcess = filteredRawUrlRelations.filter(url => {
                 if (url.action == Action.Download) {
+                  // refactor this!
                   true
                 } else {
                   logger.info("skipped url " + url.to)
                   false
                 }
               })
-              Some(new ExtractedData(linksToProcess, value))
+              new ExtractedData(linksToProcess, value)
             }
           }
         }
@@ -162,13 +163,16 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     thisFuture onComplete {
       // in what thread does this execs?
       case Success(extractedData) => {
+        // and what about fail? do we need to change status?
         synchronized {
           //ERROR and SKIP status also!!!
-          dbService.updateUrl(url.updateStatus(UrlStatus.Complete))
+          dbService.updateUrl(url.updateStatus(UrlStatus.Complete).updateFileId(extractedData.fetchedContent.id))
           futures -= thisFuture
-          extractedData match {
-            case Some(data) => data.urlRelations.foreach(linkProvider.addToExtractedLinks(_))
-            case None => logger.info("some non text/html file have been downloaded from " + location)
+          if (extractedData.urlRelations == null) {
+            // refactor this - remove nulls and null for collections!
+            logger.info("some non text/html file have been downloaded from " + location)
+          } else {
+            extractedData.urlRelations.foreach(linkProvider.addToExtractedLinks(_))
           }
           initCrawling()
         }
@@ -201,7 +205,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
 class FetchedContent(val id: String, val entityParams: EntityParams, val content: String)
 
-class ExtractedData(val urlRelations: List[RawUrlRelation], fetchedContent: FetchedContent)
+class ExtractedData(val urlRelations: List[RawUrlRelation], val fetchedContent: FetchedContent)
 
 class EntityParams(val size: Long, val url: String, val mimeType: MimeType)
 
