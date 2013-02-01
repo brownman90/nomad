@@ -59,9 +59,9 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
   }
 
 
-  def updateUrlStatus(url: String, urlStatus: UrlStatus.Value) {
-    dbService.updateUrlStatus(url, urlStatus)
-  }
+//  def updateUrlStatus(url: String, urlStatus: UrlStatus.Value) {
+//    dbService.updateUrlStatus(url, urlStatus)
+//  }
 
   def flushExtractedLinks() {
     this.synchronized {

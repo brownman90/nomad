@@ -18,7 +18,7 @@ class RawUrlRelation(val from: String, val to: String, val action: Action.Action
       val other = obj.asInstanceOf[RawUrlRelation]
       new EqualsBuilder()
         .append(from, other.from)
-        .append(to, other.to)//add Action?
+        .append(to, other.to) //add Action?
         .isEquals()
     } else {
       false
@@ -28,7 +28,7 @@ class RawUrlRelation(val from: String, val to: String, val action: Action.Action
   override def hashCode(): Int = {
     new HashCodeBuilder()
       .append(from)
-      .append(to)//add action?
+      .append(to) //add action?
       .toHashCode()
   }
 
@@ -49,10 +49,21 @@ object UrlStatus extends Enumeration {
 }
 
 
-class Url(val location: String, val status: UrlStatus.Value, val id: String) {
+class Url(val location: String, val status: UrlStatus.Value, val id: String, val fileId: String) {
+
+  def updateStatus(newStatus: UrlStatus.Value): Url = {
+    new Url(location, newStatus, id, fileId)
+  }
+
+  def updateFileId(newFileId: String): Url = {
+    new Url(location, status, id, newFileId)
+  }
+
+
   override def equals(obj: Any): Boolean = {
     if (obj.isInstanceOf[Url]) {
       val other = obj.asInstanceOf[Url]
+      //add fileId?
       new EqualsBuilder()
         .append(location, other.location)
         .isEquals()

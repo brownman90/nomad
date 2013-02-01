@@ -23,7 +23,8 @@ import collection.mutable.ListBuffer
  * Date: 1/18/13
  * Time: 3:49 AM
  */
-class TitanDBService(recreateDb: Boolean) {
+class
+TitanDBService(recreateDb: Boolean) {
 
   private val logger = LogManager.getLogger(this.getClass.getName)
   private var graph: TitanGraph = null
@@ -99,23 +100,25 @@ class TitanDBService(recreateDb: Boolean) {
   def addUrl(url: String): Vertex = {
     val vertex = graph.addVertex(UUID.randomUUID().toString)
     vertex.setProperty("location", url)
-    vertex.setProperty("status", UrlStatus.New.toString())
+    vertex.setProperty("status", UrlStatus.New.toString)
+    vertex.setProperty("fileId","")
     vertex
   }
 
 
-  def updateUrlStatus(url: String, urlStatus: UrlStatus.Value) {
-    // this.synchronized{
-    getUrl(url) match {
+  //status - always not null!!!
+  def updateUrl(url: Url) {
+    getUrl(url.location) match {
       case None => throw new RuntimeException("Sorry, url not found!")
       case Some(vertex) => {
-        Assert.isNotNull(urlStatus)
-        vertex.setProperty("status", urlStatus)
+        //Assert.isNotNull(urlStatus)
+        vertex.setProperty("status", url.status)
+        vertex.setProperty("location", url.location)
+        vertex.setProperty("fileId", url.fileId)
       }
     }
-    //  }
-
   }
+
 
   /*
   def verify() {

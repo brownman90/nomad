@@ -113,10 +113,11 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     }
   }
 
-  private def crawlUrl(parentLink: String, filterProcessor: FilterProcessor): Future[Option[ExtractedData]] = {
+  private def crawlUrl(url: Url, filterProcessor: FilterProcessor): Future[Option[ExtractedData]] = {
     implicit val ec = ExecutionContext.Implicits.global
+    val location = url.location
     val thisFuture = future[Option[ExtractedData]] {
-      val fetchedContent = fetch(parentLink)
+      val fetchedContent = fetch(location)
       count += 1
       logger.info("total crawled: " + count)
 
@@ -131,10 +132,10 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
               None
             }
             case content => {
-              val links = linkExtractor.extractLinks(value.content, parentLink)
-              logger.info("links extracted: " + links.length + " from " + parentLink)
+              val links = linkExtractor.extractLinks(value.content, location)
+              logger.info("links extracted: " + links.length + " from " + location)
               //build urlrelations objects
-              val rawUrlRelations = links.map(new RawUrlRelation(parentLink, _, Action.None))
+              val rawUrlRelations = links.map(new RawUrlRelation(location, _, Action.None))
               //remove invalid links
               val clearedLinks = URLUtils.clearUrlRelations(startUrl, rawUrlRelations.toList)
               //pass to filter
@@ -163,16 +164,16 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
       case Success(extractedData) => {
         synchronized {
           //ERROR and SKIP status also!!!
-          dbService.updateUrlStatus(parentLink, UrlStatus.Complete)
+          dbService.updateUrl(url.updateStatus(UrlStatus.Complete))
           futures -= thisFuture
           extractedData match {
             case Some(data) => data.urlRelations.foreach(linkProvider.addToExtractedLinks(_))
-            case None => logger.info("some non text/html file have been downloaded from " + parentLink)
+            case None => logger.info("some non text/html file have been downloaded from " + location)
           }
           initCrawling()
         }
       }
-      case _ => logger.error("some king of shit during crawling " + parentLink)
+      case _ => logger.error("some king of shit during crawling " + location)
     }
     thisFuture
   }
@@ -186,8 +187,8 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           logger.info("sorry, no links to crawl")
         }
         case Some(url) => {
-          dbService.updateUrlStatus(url.location, UrlStatus.InProgress)
-          val newF = crawlUrl(url.location, filterProcessor)
+          dbService.updateUrl(url.updateStatus(UrlStatus.InProgress))
+          val newF = crawlUrl(url, filterProcessor)
           futures += newF
           logger.info("starting future for crawling " + url.location)
         }

@@ -30,7 +30,7 @@ class Master {
 
   //add delay?
   //headers like in browser
-  private val MAX_THREADS = 7
+  private val MAX_THREADS = 10
   private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
@@ -42,7 +42,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://lenta.ru", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 

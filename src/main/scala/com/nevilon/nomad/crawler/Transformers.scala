@@ -17,7 +17,7 @@ object Transformers {
   def vertex2Url(vertex: Vertex): Url = {
     val statusProperty = vertex.getProperty("status")
     val status = UrlStatus.withName(statusProperty.toString)
-    new Url(vertex.getProperty("location").toString, status, vertex.getId.toString)
+    new Url(vertex.getProperty("location").toString, status, vertex.getId.toString, vertex.getProperty("fileId").toString)
   }
 
 }
