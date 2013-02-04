@@ -42,7 +42,7 @@ class Master {
     // or run thread inside crawler?
     logger.info("starting workerks")
     //
-    val worker = new Worker("http://nytimes.com", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("https://www.media.mit.edu/", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 

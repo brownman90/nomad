@@ -36,7 +36,7 @@ TitanDBService(recreateDb: Boolean) {
     graph.shutdown()
   }
 
-  def connect() {
+  private def connect() {
     val path: String = "/tmp/dbstorage/"
     val dbDir: File = new File(path)
     //drop db
@@ -62,11 +62,12 @@ TitanDBService(recreateDb: Boolean) {
     }
   }
 
-  def getOrCreateUrl(url: String): Vertex = {
-    getUrl(url) match {
+
+  def getOrCreateUrl(url: Url): Vertex = {
+    getUrl(url.location) match {
       case None => {
         //create url
-        addUrl(url)
+        addOrUpdateUrl(url)
       }
       case Some(doc) => {
         doc
@@ -74,7 +75,8 @@ TitanDBService(recreateDb: Boolean) {
     }
   }
 
-  def getUrl(url: String): Option[Vertex] = {
+
+  private def getUrl(url: String): Option[Vertex] = {
     val vertices = graph.getVertices("location", url)
     if (vertices.isEmpty) {
       None
@@ -89,8 +91,8 @@ TitanDBService(recreateDb: Boolean) {
 
   def linkUrls(relations: List[Relation]) {
     relations.foreach(relation => {
-      val parentPage = getOrCreateUrl(relation.from.location)
-      val childPage = getOrCreateUrl(relation.to.location)
+      val parentPage = getOrCreateUrl(relation.from)
+      val childPage = getOrCreateUrl(relation.to)
       graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
     })
 
@@ -98,21 +100,25 @@ TitanDBService(recreateDb: Boolean) {
   }
 
 
-  def addUrl(url: String): Vertex = {
-    val vertex = graph.addVertex(UUID.randomUUID().toString)
-    vertex.setProperty("location", url)
-    vertex.setProperty("status", UrlStatus.New.toString)
-    vertex.setProperty("fileId", "")
-    vertex.setProperty("title", "")
-    vertex.setProperty("action", Action.None.toString)
+  def addOrUpdateUrl(url: Url): Vertex = {
+    val vertex = {
+      getUrl(url.location) match {
+        case None => {
+          graph.addVertex(UUID.randomUUID().toString)
+        }
+        case Some(v) => v
+      }
+    }
+
+    vertex.setProperty("status", url.status)
+    vertex.setProperty("location", url.location)
+    vertex.setProperty("fileId", url.fileId)
+    vertex.setProperty("action", url.action)
+
     vertex
   }
 
-
-  def addOrUpdateUrl(url:Url){
-
-  }
-
+  /*
   //status - always not null!!!
   def updateUrl(url: Url) {
     getUrl(url.location) match {
@@ -126,6 +132,7 @@ TitanDBService(recreateDb: Boolean) {
       }
     }
   }
+  */
 
 
   /*

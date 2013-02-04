@@ -34,7 +34,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
        so here we need just find url in urls table and than check if domain is in white list(domains table)
 
      */
-    dbService.getOrCreateUrl(url)
+    dbService.addOrUpdateUrl(new Url(url))
   }
 
   def addToExtractedLinks(linkRelation: Relation) {

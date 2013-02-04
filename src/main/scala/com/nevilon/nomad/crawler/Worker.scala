@@ -162,7 +162,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
         // and what about fail? do we need to change status?
         synchronized {
           //ERROR and SKIP status also!!!
-          dbService.updateUrl(
+          dbService.addOrUpdateUrl(
             url.updateStatus(UrlStatus.Complete).
               updateFileId(extractedData.fetchedContent.gfsId)
           )
@@ -190,7 +190,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           logger.info("sorry, no links to crawl")
         }
         case Some(url) => {
-          dbService.updateUrl(url.updateStatus(UrlStatus.InProgress))
+          dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.InProgress))
           val newF = crawlUrl(url, filterProcessor)
           futures += newF
           logger.info("starting future for crawling " + url.location)
