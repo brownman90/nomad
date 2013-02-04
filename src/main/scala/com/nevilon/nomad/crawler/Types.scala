@@ -11,7 +11,7 @@ import com.nevilon.nomad.filter.Action
  */
 
 
-class RawUrlRelation(val from: String, val to: String, val action: Action.Action) {
+class RawUrlRelation(val from: String, val title: String, val to: String, val action: Action.Action) {
 
   override def equals(obj: Any): Boolean = {
     if (obj.isInstanceOf[RawUrlRelation]) {
@@ -49,14 +49,14 @@ object UrlStatus extends Enumeration {
 }
 
 
-class Url(val location: String, val status: UrlStatus.Value, val id: String, val fileId: String) {
+class Url(val location: String, val status: UrlStatus.Value, val id: String, val fileId: String, val title: String) {
 
   def updateStatus(newStatus: UrlStatus.Value): Url = {
-    new Url(location, newStatus, id, fileId)
+    new Url(location, newStatus, id, fileId, title)
   }
 
   def updateFileId(newFileId: String): Url = {
-    new Url(location, status, id, newFileId)
+    new Url(location, status, id, newFileId, title)
   }
 
 

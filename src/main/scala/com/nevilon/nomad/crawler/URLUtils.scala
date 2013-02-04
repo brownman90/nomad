@@ -54,7 +54,7 @@ object URLUtils {
     //remove empty links
     //normalization
     //normalize from?
-    clearedUrlRelations = clearedUrlRelations.map(urlRelation => new RawUrlRelation(urlRelation.from, URLUtils.normalize(urlRelation.to), Action.None))
+    clearedUrlRelations = clearedUrlRelations.map(urlRelation => new RawUrlRelation(urlRelation.from,urlRelation.title, URLUtils.normalize(urlRelation.to), Action.None))
     clearedUrlRelations = clearedUrlRelations.filter(urlRelation => !urlRelation.from.equals(urlRelation.to)) // check this!!!!)
     //remove links to another domains
     clearedUrlRelations = clearedUrlRelations.filter(urlRelation => {

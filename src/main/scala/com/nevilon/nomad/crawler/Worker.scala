@@ -31,7 +31,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private val logger = LogManager.getLogger(this.getClass.getName)
 
   private val linkProvider = new LinkProvider(startUrl, dbService)
-  private val linkExtractor = new LinkExtractor
+  private val pageDataExtractor = new PageDataExtractor
   private var futures = new ListBuffer[Future[ExtractedData]]
 
   private val domain = URLUtils.normalize(URLUtils.getDomainName(startUrl))
@@ -132,16 +132,18 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
               new ExtractedData(null, value)
             }
             case content => {
-              val links = linkExtractor.extractLinks(value.content, location)
-              logger.info("links extracted: " + links.length + " from " + location)
+              val page = pageDataExtractor.extractLinks(value.content, location)
+              logger.info("links extracted: " + page.links.length + " from " + location)
               //build urlrelations objects
-              val rawUrlRelations = links.map(new RawUrlRelation(location, _, Action.None))
+              val rawUrlRelations = page.links.map(item => {
+                new RawUrlRelation(location, item.text, item.url, Action.None)
+              })
               //remove invalid links
               val clearedLinks = URLUtils.clearUrlRelations(startUrl, rawUrlRelations.toList)
               //pass to filter
               val filteredRawUrlRelations = clearedLinks.map(link => {
                 val action = filterProcessor.filterUrl(link.to)
-                new RawUrlRelation(link.from, link.to, action)
+                new RawUrlRelation(link.from, link.title, link.to, action)
               })
               //remove all links we needn't to crawl
               val linksToProcess = filteredRawUrlRelations.filter(url => {

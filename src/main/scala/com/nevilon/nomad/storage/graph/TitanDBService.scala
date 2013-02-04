@@ -101,7 +101,8 @@ TitanDBService(recreateDb: Boolean) {
     val vertex = graph.addVertex(UUID.randomUUID().toString)
     vertex.setProperty("location", url)
     vertex.setProperty("status", UrlStatus.New.toString)
-    vertex.setProperty("fileId","")
+    vertex.setProperty("fileId", "")
+    vertex.setProperty("title", "")
     vertex
   }
 
@@ -115,6 +116,7 @@ TitanDBService(recreateDb: Boolean) {
         vertex.setProperty("status", url.status)
         vertex.setProperty("location", url.location)
         vertex.setProperty("fileId", url.fileId)
+        vertex.setProperty("title", url.title)
       }
     }
   }
