@@ -38,6 +38,6 @@ class PageDataExtractor {
 
 }
 
-class PageLink(val url: String, val text: String)
+class PageLink(val url: String, val name: String)
 
 class Page(val title: Option[String], val links: List[PageLink])

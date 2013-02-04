@@ -63,7 +63,6 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   }
 
   private def fetch(url: String): Option[FetchedContent] = {
-    //encode to escape special symbols
     val encodedUrl = URIUtil.encodeQuery(url)
     val httpGet = new HttpGet(encodedUrl)
     logger.info("connecting to " + encodedUrl)
@@ -129,7 +128,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
               logger.info("links extracted: " + page.links.length + " from " + location)
               //build urlrelations objects
               val relations = page.links.map(item => {
-                val to = new Url(item.url, item.text)
+                val to = new Url(item.url, item.name)
                 new Relation(url, to)
               })
               //remove invalid links
