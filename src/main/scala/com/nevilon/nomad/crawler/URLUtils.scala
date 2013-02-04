@@ -45,23 +45,31 @@ object URLUtils {
   }
 
 
-  def clearUrlRelations(startUrl: String, linksToClear: List[RawUrlRelation]): List[RawUrlRelation] = {
-    var clearedUrlRelations = List[RawUrlRelation]()
+  def clearUrlRelations(startUrl: String, linksToClear: List[Relation]): List[Relation] = {
+    var clearedUrlRelations = List[Relation]()
     clearedUrlRelations = linksToClear.
-      filter(urlRelation => !urlRelation.to.contains("@")).
-      filter(urlRelation => !urlRelation.to.startsWith("mailto:")).
-      filter(urlRelation => !urlRelation.to.trim().isEmpty)
+      filter(urlRelation => !urlRelation.to.location.contains("@")).
+      filter(urlRelation => !urlRelation.to.location.startsWith("mailto:")).
+      filter(urlRelation => !urlRelation.to.location.trim().isEmpty)
     //remove empty links
     //normalization
     //normalize from?
-    clearedUrlRelations = clearedUrlRelations.map(urlRelation => new RawUrlRelation(urlRelation.from,urlRelation.title, URLUtils.normalize(urlRelation.to), Action.None))
-    clearedUrlRelations = clearedUrlRelations.filter(urlRelation => !urlRelation.from.equals(urlRelation.to)) // check this!!!!)
+    clearedUrlRelations = clearedUrlRelations.map(relation => {
+      val to = new Url(URLUtils.normalize(relation.to.location), UrlStatus.New, relation.to.id, relation.to.fileId, relation.to.title, relation.to.action) //check this!!!
+      new Relation(relation.from, to)
+
+
+    })
+
+
+
+    clearedUrlRelations = clearedUrlRelations.filter(relation => !relation.from.equals(relation.to)) // check this!!!!)
     //remove links to another domains
     clearedUrlRelations = clearedUrlRelations.filter(urlRelation => {
       try {
         //accept links from this domain only!
         val startDomain = URLUtils.getDomainName(startUrl)
-        val linkDomain = URLUtils.getDomainName(urlRelation.to)
+        val linkDomain = URLUtils.getDomainName(urlRelation.to.location)
         startDomain.equals(linkDomain)
       }
       catch {
@@ -73,6 +81,7 @@ object URLUtils {
     })
     //remove duplicates
     clearedUrlRelations.distinct
+
   }
 
 }

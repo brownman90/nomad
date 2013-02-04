@@ -13,7 +13,7 @@ import com.nevilon.nomad.storage.graph.TitanDBService
  */
 class LinkProvider(domain: String, dbService: TitanDBService) {
 
-  private val extractedLinks = new ListBuffer[RawUrlRelation]
+  private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
   private val BFS_LIMIT = 5000
@@ -37,7 +37,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
     dbService.getOrCreateUrl(url)
   }
 
-  def addToExtractedLinks(linkRelation: RawUrlRelation) {
+  def addToExtractedLinks(linkRelation: Relation) {
     extractedLinks += linkRelation
   }
 

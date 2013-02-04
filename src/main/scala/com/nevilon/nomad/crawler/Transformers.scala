@@ -1,6 +1,7 @@
 package com.nevilon.nomad.crawler
 
 import com.tinkerpop.blueprints.Vertex
+import com.nevilon.nomad.filter.Action
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,9 +16,15 @@ object Transformers {
 
 
   def vertex2Url(vertex: Vertex): Url = {
+    //get status value
     val statusProperty = vertex.getProperty("status")
     val status = UrlStatus.withName(statusProperty.toString)
-    new Url(vertex.getProperty("location").toString, status, vertex.getId.toString, vertex.getProperty("fileId").toString, vertex.getProperty("title").toString)
+    //get action value
+    val actionProperty = vertex.getProperty("action")
+    val action = Action.withName(actionProperty.toString)
+
+    new Url(vertex.getProperty("location").toString, status, vertex.getId.toString,
+      vertex.getProperty("fileId").toString, vertex.getProperty("title").toString, action)
   }
 
 }

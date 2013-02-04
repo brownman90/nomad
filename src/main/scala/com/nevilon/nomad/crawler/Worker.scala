@@ -24,8 +24,6 @@ import scala.util.Success
 //use startUrl, not domain!!!
 class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) {
 
-  type ResponseDataStructure = (List[String], String)
-
   private val fileStorage = new FileStorage()
 
   private val logger = LogManager.getLogger(this.getClass.getName)
@@ -136,22 +134,26 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
               logger.info("links extracted: " + page.links.length + " from " + location)
               //build urlrelations objects
               val rawUrlRelations = page.links.map(item => {
-                new RawUrlRelation(location, item.text, item.url, Action.None)
+                val from = new Url(location, UrlStatus.Complete, "", "", "", Action.None)
+                val to = new Url(item.url, UrlStatus.New, "", "", item.text, Action.None)
+                new Relation(from, to)
               })
               //remove invalid links
               val clearedLinks = URLUtils.clearUrlRelations(startUrl, rawUrlRelations.toList)
               //pass to filter
-              val filteredRawUrlRelations = clearedLinks.map(link => {
-                val action = filterProcessor.filterUrl(link.to)
-                new RawUrlRelation(link.from, link.title, link.to, action)
+              val filteredRawUrlRelations = clearedLinks.map(relation => {
+                val action = filterProcessor.filterUrl(relation.to.location)
+
+                val toUrl = new Url(relation.to.location, UrlStatus.New, "id", "fileid", "", action) //check this!!!
+                new Relation(relation.from, toUrl)
               })
               //remove all links we needn't to crawl
-              val linksToProcess = filteredRawUrlRelations.filter(url => {
-                if (url.action == Action.Download) {
+              val linksToProcess = filteredRawUrlRelations.filter(relation => {
+                if (relation.to.action == Action.Download) {
                   // refactor this!
                   true
                 } else {
-                  logger.info("skipped url " + url.to)
+                  logger.info("skipped url " + relation.to.location)
                   false
                 }
               })
@@ -170,11 +172,11 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           //ERROR and SKIP status also!!!
           dbService.updateUrl(url.updateStatus(UrlStatus.Complete).updateFileId(extractedData.fetchedContent.id))
           futures -= thisFuture
-          if (extractedData.urlRelations == null) {
+          if (extractedData.relations == null) {
             // refactor this - remove nulls and null for collections!
             logger.info("some non text/html file have been downloaded from " + location)
           } else {
-            extractedData.urlRelations.foreach(linkProvider.addToExtractedLinks(_))
+            extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
           }
           initCrawling()
         }
@@ -205,9 +207,12 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 }
 
 
+//refactor
 class FetchedContent(val id: String, val entityParams: EntityParams, val content: String)
 
-class ExtractedData(val urlRelations: List[RawUrlRelation], val fetchedContent: FetchedContent)
+//refactor
+class ExtractedData(val relations: List[Relation], val fetchedContent: FetchedContent)
 
+//refactor
 class EntityParams(val size: Long, val url: String, val mimeType: MimeType)
 

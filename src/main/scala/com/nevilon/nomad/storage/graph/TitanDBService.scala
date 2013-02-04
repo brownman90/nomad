@@ -6,7 +6,7 @@ import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import scala.Predef._
 import com.nevilon.nomad._
 import com.tinkerpop.blueprints.{Direction, Vertex}
-import crawler.{Url, UrlStatus, RawUrlRelation, Transformers}
+import crawler.{Url, UrlStatus, Relation, Transformers}
 import java.util.UUID
 import org.apache.commons.io.FileUtils
 import collection.mutable
@@ -86,10 +86,10 @@ TitanDBService(recreateDb: Boolean) {
     }
   }
 
-  def linkUrls(relations: List[RawUrlRelation]) {
+  def linkUrls(relations: List[Relation]) {
     relations.foreach(relation => {
-      val parentPage = getOrCreateUrl(relation.from)
-      val childPage = getOrCreateUrl(relation.to)
+      val parentPage = getOrCreateUrl(relation.from.location)
+      val childPage = getOrCreateUrl(relation.to.location)
       graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
     })
 
@@ -103,6 +103,7 @@ TitanDBService(recreateDb: Boolean) {
     vertex.setProperty("status", UrlStatus.New.toString)
     vertex.setProperty("fileId", "")
     vertex.setProperty("title", "")
+    vertex.setProperty("action", "None")
     vertex
   }
 
@@ -117,6 +118,7 @@ TitanDBService(recreateDb: Boolean) {
         vertex.setProperty("location", url.location)
         vertex.setProperty("fileId", url.fileId)
         vertex.setProperty("title", url.title)
+        vertex.setProperty("action", url.action)
       }
     }
   }
