@@ -72,24 +72,19 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
       val entity: HttpEntity = response.getEntity
       val entityParams = buildEntityParams(entity, url)
       if (filterProcessor.filterEntity(entityParams) == Action.Download) {
-        //accept
-        //filter - SKIP or DOWNLOAD
-        //check entity type
         val data: (InputStream, Option[String]) = {
           if (entityParams.mimeType.getSubType.contains("html")) {
-            val strContent = EntityUtils.toString(entity)
-            //extract links from page
-            //save content
-            (new ByteArrayInputStream(strContent.getBytes), Some(strContent))
+            val contentAsTxt = EntityUtils.toString(entity)
+            (new ByteArrayInputStream(contentAsTxt.getBytes), Some(contentAsTxt))
           } else {
             (entity.getContent, None)
           }
         }
-        val id = saveContent(data._1, url, entityParams.mimeType.getBaseType)
+        val gfsId = saveContent(data._1, url, entityParams.mimeType.getBaseType)
         val fetchedContent = {
           data._2 match {
-            case None => new FetchedContent(id, entityParams, null)
-            case Some(content) => new FetchedContent(id, entityParams, content)
+            case None => new FetchedContent(gfsId, entityParams, null)
+            case Some(content) => new FetchedContent(gfsId, entityParams, content)
           }
         }
         Some(fetchedContent)
@@ -127,24 +122,22 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           value.content match {
             case null => {
               // this is a case for non html data, but we still need process fileId!
-              new ExtractedData(null, value)
+              new ExtractedData(Nil, value)
             }
             case content => {
               val page = pageDataExtractor.extractLinks(value.content, location)
               logger.info("links extracted: " + page.links.length + " from " + location)
               //build urlrelations objects
-              val rawUrlRelations = page.links.map(item => {
-                val from = new Url(location, UrlStatus.Complete, "", "", "", Action.None)
-                val to = new Url(item.url, UrlStatus.New, "", "", item.text, Action.None)
-                new Relation(from, to)
+              val relations = page.links.map(item => {
+                val to = new Url(item.url, item.text)
+                new Relation(url, to)
               })
               //remove invalid links
-              val clearedLinks = URLUtils.clearUrlRelations(startUrl, rawUrlRelations.toList)
+              val clearedLinks = URLUtils.clearUrlRelations(startUrl, relations.toList)
               //pass to filter
               val filteredRawUrlRelations = clearedLinks.map(relation => {
                 val action = filterProcessor.filterUrl(relation.to.location)
-
-                val toUrl = new Url(relation.to.location, UrlStatus.New, "id", "fileid", "", action) //check this!!!
+                val toUrl = relation.to.updateAction(action)
                 new Relation(relation.from, toUrl)
               })
               //remove all links we needn't to crawl
@@ -170,9 +163,12 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
         // and what about fail? do we need to change status?
         synchronized {
           //ERROR and SKIP status also!!!
-          dbService.updateUrl(url.updateStatus(UrlStatus.Complete).updateFileId(extractedData.fetchedContent.id))
+          dbService.updateUrl(
+            url.updateStatus(UrlStatus.Complete).
+              updateFileId(extractedData.fetchedContent.gfsId)
+          )
           futures -= thisFuture
-          if (extractedData.relations == null) {
+          if (extractedData.relations == Nil) {
             // refactor this - remove nulls and null for collections!
             logger.info("some non text/html file have been downloaded from " + location)
           } else {
@@ -208,7 +204,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
 
 //refactor
-class FetchedContent(val id: String, val entityParams: EntityParams, val content: String)
+class FetchedContent(val gfsId: String, val entityParams: EntityParams, val content: String)
 
 //refactor
 class ExtractedData(val relations: List[Relation], val fetchedContent: FetchedContent)

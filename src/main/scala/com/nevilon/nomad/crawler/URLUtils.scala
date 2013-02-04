@@ -55,13 +55,9 @@ object URLUtils {
     //normalization
     //normalize from?
     clearedUrlRelations = clearedUrlRelations.map(relation => {
-      val to = new Url(URLUtils.normalize(relation.to.location), UrlStatus.New, relation.to.id, relation.to.fileId, relation.to.title, relation.to.action) //check this!!!
-      new Relation(relation.from, to)
-
-
+      val normalizedLocation = URLUtils.normalize(relation.to.location)
+      new Relation(relation.from, relation.to.updateLocation(normalizedLocation))
     })
-
-
 
     clearedUrlRelations = clearedUrlRelations.filter(relation => !relation.from.equals(relation.to)) // check this!!!!)
     //remove links to another domains

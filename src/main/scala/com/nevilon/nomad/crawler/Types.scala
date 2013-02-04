@@ -11,32 +11,6 @@ import com.nevilon.nomad.filter.Action
  */
 
 
-/*
-class RawUrlRelation(val from: String, val title: String, val to: String, val action: Action.Action) {
-
-  override def equals(obj: Any): Boolean = {
-    if (obj.isInstanceOf[RawUrlRelation]) {
-      val other = obj.asInstanceOf[RawUrlRelation]
-      new EqualsBuilder()
-        .append(from, other.from)
-        .append(to, other.to) //add Action?
-        .isEquals()
-    } else {
-      false
-    }
-  }
-
-  override def hashCode(): Int = {
-    new HashCodeBuilder()
-      .append(from)
-      .append(to) //add action?
-      .toHashCode()
-  }
-
-}
-*/
-
-
 class UrlStatus {}
 
 
@@ -75,6 +49,18 @@ class Relation(val from: Url, val to: Url) {
 
 
 class Url(val location: String, val status: UrlStatus.Value, val id: String, val fileId: String, val title: String, val action: Action.Value) {
+
+  def this(location: String, name: String) = this(location, UrlStatus.New, "none", "none", name, Action.None)
+
+
+  def updateLocation(newLocation: String): Url = {
+    new Url(newLocation, status, id, fileId, title, action)
+  }
+
+
+  def updateAction(newAction: Action.Value): Url = {
+    new Url(location, status, id, fileId, title, newAction)
+  }
 
   def updateStatus(newStatus: UrlStatus.Value): Url = {
     new Url(location, newStatus, id, fileId, title, action)

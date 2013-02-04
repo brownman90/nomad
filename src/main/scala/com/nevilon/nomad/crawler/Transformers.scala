@@ -22,9 +22,10 @@ object Transformers {
     //get action value
     val actionProperty = vertex.getProperty("action")
     val action = Action.withName(actionProperty.toString)
-
-    new Url(vertex.getProperty("location").toString, status, vertex.getId.toString,
-      vertex.getProperty("fileId").toString, vertex.getProperty("title").toString, action)
+    //get str value of property by calling toString
+    implicit def AnyRef2String(property: AnyRef) = property.toString
+    new Url(vertex.getProperty("location"), status, vertex.getId,
+      vertex.getProperty("fileId"), vertex.getProperty("title"), action)
   }
 
 }
