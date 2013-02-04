@@ -11,7 +11,7 @@ import com.nevilon.nomad.crawler.EntityParams
  * Date: 1/27/13
  * Time: 8:13 AM
  */
-class GroovyScriptingFilter extends UrlFilter {
+class GroovyScriptingFilter extends Filter[String] {
 
   var groovyObject: GroovyObject = null
 
@@ -34,7 +34,7 @@ class GroovyScriptingFilter extends UrlFilter {
 }
 
 
-class GroovyEntityFilter extends EntityFilter {
+class GroovyEntityFilter extends Filter[EntityParams] {
 
   private val engine = new GroovyFilterEngine[EntityParams]("filterEntity") {
     def mapArgs(t: EntityParams): List[AnyRef] = {
@@ -49,7 +49,7 @@ class GroovyEntityFilter extends EntityFilter {
 }
 
 
-class GroovyUrlFilter extends UrlFilter {
+class GroovyUrlFilter extends Filter[String] {
 
   private val engine = new GroovyFilterEngine[String]("filterUrl") {
     def mapArgs(t: String): List[AnyRef] = {
@@ -82,10 +82,10 @@ abstract class GroovyFilterEngine[T](filterMethodName: String) {
   def mapArgs(t: T): List[AnyRef]
 
   def filter(t: T): Option[Action.Action] = {
-   // val data = List(1, 2, 3)
+    // val data = List(1, 2, 3)
 
-   // val args = (data.map(_.asInstanceOf[AnyRef]))
-   // groovyObject.invokeMethod("echo", args.toArray[AnyRef])
+    // val args = (data.map(_.asInstanceOf[AnyRef]))
+    // groovyObject.invokeMethod("echo", args.toArray[AnyRef])
 
 
     val result = groovyObject.invokeMethod(filterMethodName, mapArgs(t).map(_.asInstanceOf[AnyRef]).toArray[AnyRef])

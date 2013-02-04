@@ -10,7 +10,7 @@ import crawlercommons.fetcher.UserAgent
  * Date: 1/27/13
  * Time: 8:11 AM
  */
-class RobotsUrlFilter(domain: String) extends UrlFilter {
+class RobotsUrlFilter(domain: String) extends Filter[String] {
 
   //set the same user agent for http client
   object RobotsConfig {
@@ -32,6 +32,6 @@ class RobotsUrlFilter(domain: String) extends UrlFilter {
   import Action._
 
   override def filter(url: String): Option[Action] = {
-    if (rules.isAllowed(url)) scala.None  else Some(Action.Skip)
+    if (rules.isAllowed(url)) scala.None else Some(Action.Skip)
   }
 }

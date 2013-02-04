@@ -29,8 +29,6 @@ object FilterProcessorFactory {
     fps.addEntityFilter(new GroovyEntityFilter)
     fps.addEntityFilter(new EndEntityFilter)
 
-
-
     fps.addUrlFilter(new RobotsUrlFilter(domain))
     fps.addUrlFilter(new GroovyUrlFilter)
     fps.addUrlFilter(new EndFilter)
@@ -44,25 +42,32 @@ class FilterProcessor extends AbsFilterProcessor {
 
   import Action._
 
+
   def filterUrl(url: String): Action = {
-    //add defaultEmptyFilter = always returns DOWNLOAD!
-    var result = Action.None
-    for (i <- 0 until urlFilters.length if result == None) {
-      urlFilters(i).filter(url) match {
-        case scala.None => {}
-        case Some(action) => {
-          result = action
-        }
-      }
-    }
-    result
+    urlFilterSet.filter(url)
   }
 
-  //sorry for copypast, I need some additional time to create nice solution
   def filterEntity(entityParams: EntityParams): Action = {
+    entityFilterSet.filter(entityParams)
+  }
+
+
+}
+
+class FilterSet[T] {
+
+  protected val filters = new ListBuffer[Filter[T]]
+
+  def addFilter(filter: Filter[T]) {
+    filters += filter
+  }
+
+  import Action._
+
+  def filter(something: T): Action.Value = {
     var result = Action.None
-    for (i <- 0 until entityFilters.length if result == None) {
-      entityFilters(i).filter(entityParams) match {
+    for (i <- 0 until filters.length if result == None) {
+      filters(i).filter(something) match {
         case scala.None => {}
         case Some(action) => {
           result = action
@@ -71,57 +76,40 @@ class FilterProcessor extends AbsFilterProcessor {
     }
     result
   }
-
 
 }
 
 class AbsFilterProcessor {
 
-  protected var urlFilters = new ListBuffer[UrlFilter]()
-  protected var entityFilters = new ListBuffer[EntityFilter]()
-
+  protected var urlFilterSet = new FilterSet[String]
+  protected var entityFilterSet = new FilterSet[EntityParams]
 
 }
 
 trait FilterProcessorConstructor extends AbsFilterProcessor {
 
-  def addUrlFilter(urlFilter: UrlFilter) {
-    urlFilters += urlFilter
+  def addUrlFilter(urlFilter: Filter[String]) {
+    urlFilterSet.addFilter(urlFilter)
   }
 
-  def addEntityFilter(entityFilter: EntityFilter) {
-    entityFilters += entityFilter
+  def addEntityFilter(entityFilter: Filter[EntityParams]) {
+    entityFilterSet.addFilter(entityFilter)
   }
 
 }
 
 
 object Action extends Enumeration {
+
   type Action = Value
   val Download, Skip, None = Value
 }
 
 
-trait UrlFilter extends Filter {
+abstract class Filter[T] {
 
   import Action._
 
-  def filter(url: String): Option[Action]
+  def filter(something: T): Option[Action]
 
 }
-
-trait EntityFilter extends Filter {
-
-  import Action._
-
-  def filter(entityParams: EntityParams): Option[Action]
-
-}
-
-abstract class Filter {}
-
-
-
-
-
-
