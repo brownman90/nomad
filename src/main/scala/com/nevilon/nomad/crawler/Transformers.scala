@@ -25,7 +25,7 @@ object Transformers {
     //get str value of property by calling toString
     implicit def AnyRef2String(property: AnyRef) = property.toString
     new Url(vertex.getProperty("location"), status, vertex.getId,
-      vertex.getProperty("fileId"), vertex.getProperty("title"), action)
+      vertex.getProperty("fileId"),  action)
   }
 
 }

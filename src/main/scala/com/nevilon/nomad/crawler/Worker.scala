@@ -128,7 +128,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
               logger.info("links extracted: " + page.links.length + " from " + location)
               //build urlrelations objects
               val relations = page.links.map(item => {
-                val to = new Url(item.url, item.name)
+                val to = new Url(item.url)
                 new Relation(url, to)
               })
               //remove invalid links

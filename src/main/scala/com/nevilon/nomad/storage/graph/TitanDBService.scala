@@ -7,6 +7,7 @@ import scala.Predef._
 import com.nevilon.nomad._
 import com.tinkerpop.blueprints.{Direction, Vertex}
 import crawler.{Url, UrlStatus, Relation, Transformers}
+import filter.Action
 import java.util.UUID
 import org.apache.commons.io.FileUtils
 import collection.mutable
@@ -103,10 +104,14 @@ TitanDBService(recreateDb: Boolean) {
     vertex.setProperty("status", UrlStatus.New.toString)
     vertex.setProperty("fileId", "")
     vertex.setProperty("title", "")
-    vertex.setProperty("action", "None")
+    vertex.setProperty("action", Action.None.toString)
     vertex
   }
 
+
+  def addOrUpdateUrl(url:Url){
+
+  }
 
   //status - always not null!!!
   def updateUrl(url: Url) {
@@ -117,7 +122,6 @@ TitanDBService(recreateDb: Boolean) {
         vertex.setProperty("status", url.status)
         vertex.setProperty("location", url.location)
         vertex.setProperty("fileId", url.fileId)
-        vertex.setProperty("title", url.title)
         vertex.setProperty("action", url.action)
       }
     }

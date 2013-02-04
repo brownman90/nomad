@@ -48,26 +48,30 @@ class Relation(val from: Url, val to: Url) {
 }
 
 
-class Url(val location: String, val status: UrlStatus.Value, val id: String, val fileId: String, val title: String, val action: Action.Value) {
+class Url(
+           val location: String, val status: UrlStatus.Value,
+           val id: String, val fileId: String,
+           val action: Action.Value
+           ) {
 
-  def this(location: String, name: String) = this(location, UrlStatus.New, "none", "none", name, Action.None)
+  def this(location: String) = this(location, UrlStatus.New, "none", "none", Action.None)
 
 
   def updateLocation(newLocation: String): Url = {
-    new Url(newLocation, status, id, fileId, title, action)
+    new Url(newLocation, status, id, fileId, action)
   }
 
 
   def updateAction(newAction: Action.Value): Url = {
-    new Url(location, status, id, fileId, title, newAction)
+    new Url(location, status, id, fileId, newAction)
   }
 
   def updateStatus(newStatus: UrlStatus.Value): Url = {
-    new Url(location, newStatus, id, fileId, title, action)
+    new Url(location, newStatus, id, fileId, action)
   }
 
   def updateFileId(newFileId: String): Url = {
-    new Url(location, status, id, newFileId, title, action)
+    new Url(location, status, id, newFileId, action)
   }
 
 
