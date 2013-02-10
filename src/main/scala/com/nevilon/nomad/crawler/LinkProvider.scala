@@ -11,7 +11,15 @@ import com.nevilon.nomad.storage.graph.TitanDBService
  * Date: 1/20/13
  * Time: 4:11 PM
  */
-class LinkProvider(domain: String, dbService: TitanDBService) {
+
+
+trait PopProvider {
+
+  def pop(): Option[Url]
+
+}
+
+class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvider {
 
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
@@ -69,8 +77,11 @@ class LinkProvider(domain: String, dbService: TitanDBService) {
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
     val bfsLinks = dbService.getBFSLinks(startUrl, EXTRACTED_LINKS_LIMIT)
-    logger.info("bfs links loaded: "+BFS_LIMIT)
+    logger.info("bfs links loaded: " + BFS_LIMIT)
     bfsLinks.toList
   }
 
+  def pop(): Option[Url] = {
+    urlToCrawl()
+  }
 }

@@ -182,22 +182,57 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   }
 
   private def initCrawling() {
-    var hasUrlsToCrawl = true
-    while (futures.length < maxThreads && hasUrlsToCrawl) {
-      linkProvider.urlToCrawl() match {
+    val carousel = new Carousel(maxThreads, linkProvider)
+    carousel.setOnStart((url: Url) => crawlUrl(url, filterProcessor))
+    carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.InProgress))))
+    carousel.start()
+  }
+
+}
+
+
+class Carousel(val maxThreads: Int, dataProvider: PopProvider) {
+
+  private type FType = Future[ExtractedData]
+
+  private var futures = new ListBuffer[FType]
+
+  def stop() {}
+
+  def start() {
+    var hasData = true
+    while (futures.length < maxThreads && hasData) {
+      dataProvider.pop() match {
         case None => {
-          hasUrlsToCrawl = false // exit from loop
-          logger.info("sorry, no links to crawl")
+          hasData = false // exit from loop
+          //logger.info("sorry, no links to crawl")
         }
         case Some(url) => {
-          dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.InProgress))
-          val newF = crawlUrl(url, filterProcessor)
-          futures += newF
-          logger.info("starting future for crawling " + url.location)
+          onBeforeStart(url)
+          futures += onStartMethod(url)
+          //logger.info("starting future for crawling " + url.location)
         }
       }
     }
   }
+
+  private var onStartMethod: (Url) => FType = null
+  private var onBeforeStart: (Url) => Unit = null
+
+  def setOnStart(method: (Url) => FType) {
+    onStartMethod = method
+  }
+
+
+  def setOnBeforeStart(method: (Url) => Unit) {
+    onBeforeStart = method
+  }
+
+
+  def setOnComplete() {}
+
+  //use either
+  def onFailure() {}
 
 }
 
