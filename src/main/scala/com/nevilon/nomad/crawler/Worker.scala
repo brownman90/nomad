@@ -14,6 +14,7 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.protocol.BasicHttpContext
 import org.apache.http.util.EntityUtils
 import scala.util.Success
+import com.nevilon.nomad.logs.Logs
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,7 +23,7 @@ import scala.util.Success
  * Time: 10:20 AM
  */
 //use startUrl, not domain!!!
-class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) {
+class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) extends Logs {
 
   private val fileStorage = new FileStorage()
 
@@ -65,7 +66,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private def fetch(url: String): Option[FetchedContent] = {
     val encodedUrl = URIUtil.encodeQuery(url)
     val httpGet = new HttpGet(encodedUrl)
-    logger.info("connecting to " + encodedUrl)
+    info("connecting to " + encodedUrl)
     try {
       val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
       val entity: HttpEntity = response.getEntity
@@ -88,14 +89,14 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
         }
         Some(fetchedContent)
       } else {
-        logger.info("skip " + url)
+        info("skip " + url)
         //???
         None
       }
     }
     catch {
       case e: Exception => {
-        logger.info("error during crawling " + url, e)
+        info("error during crawling " + url, e)
         httpGet.abort()
         None
       }
@@ -111,7 +112,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     val thisFuture = future[ExtractedData] {
       val fetchedContent = fetch(location)
       count += 1
-      logger.info("total crawled: " + count)
+      info("total crawled: " + count)
 
       fetchedContent match {
         case None => {
@@ -125,7 +126,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
             }
             case content => {
               val page = pageDataExtractor.extractLinks(value.content, location)
-              logger.info("links extracted: " + page.links.length + " from " + location)
+              info("links extracted: " + page.links.length + " from " + location)
               //build urlrelations objects
               val relations = page.links.map(item => {
                 val to = new Url(item.url)
@@ -145,7 +146,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
                   // refactor this!
                   true
                 } else {
-                  logger.info("skipped url " + relation.to.location)
+                  info("skipped url " + relation.to.location)
                   false
                 }
               })
@@ -169,14 +170,14 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           futures -= thisFuture
           if (extractedData.relations == Nil) {
             // refactor this - remove nulls and null for collections!
-            logger.info("some non text/html file have been downloaded from " + location)
+            info("some non text/html file have been downloaded from " + location)
           } else {
             extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
           }
           initCrawling()
         }
       }
-      case _ => logger.error("some king of shit during crawling " + location)
+      case _ => error("some king of shit during crawling " + location)
     }
     thisFuture
   }
@@ -191,7 +192,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 }
 
 
-class Carousel(val maxThreads: Int, dataProvider: PopProvider) {
+class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
   private type FType = Future[ExtractedData]
 
@@ -210,7 +211,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) {
         case Some(url) => {
           onBeforeStart(url)
           futures += onStartMethod(url)
-          //logger.info("starting future for crawling " + url.location)
+          info("starting future for crawling " + url.location)
         }
       }
     }
@@ -245,4 +246,6 @@ class ExtractedData(val relations: List[Relation], val fetchedContent: FetchedCo
 
 //refactor
 class EntityParams(val size: Long, val url: String, val mimeType: MimeType)
+
+
 
