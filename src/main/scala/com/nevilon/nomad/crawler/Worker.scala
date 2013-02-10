@@ -2,7 +2,6 @@ package com.nevilon.nomad.crawler
 
 import org.apache.http.client.HttpClient
 import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
-import org.apache.log4j.LogManager
 import collection.mutable.ListBuffer
 import concurrent._
 import com.nevilon.nomad.filter.{FilterProcessor, Action, FilterProcessorFactory}
@@ -26,8 +25,6 @@ import com.nevilon.nomad.logs.Logs
 class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) extends Logs {
 
   private val fileStorage = new FileStorage()
-
-  private val logger = LogManager.getLogger(this.getClass.getName)
 
   private val linkProvider = new LinkProvider(startUrl, dbService)
   private val pageDataExtractor = new PageDataExtractor
@@ -206,7 +203,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
       dataProvider.pop() match {
         case None => {
           hasData = false // exit from loop
-          //logger.info("sorry, no links to crawl")
+          info("sorry, no links to crawl")
         }
         case Some(url) => {
           onBeforeStart(url)
