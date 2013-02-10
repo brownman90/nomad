@@ -3,7 +3,6 @@ package com.nevilon.nomad.crawler
 import com.nevilon.nomad.logs.Logs
 import collection.mutable.ListBuffer
 import concurrent._
-import util.Try
 import scala.util.Try
 import scala.Some
 
@@ -27,7 +26,6 @@ class Carousel[T](val maxThreads: Int, dataProvider: PopProvider) extends Logs {
   def start() {
     var hasData = true
     while (futures.length < maxThreads && hasData) {
-      println(futures.length)
       dataProvider.pop() match {
         case None => {
           hasData = false // exit from loop
@@ -53,9 +51,8 @@ class Carousel[T](val maxThreads: Int, dataProvider: PopProvider) extends Logs {
       onStartMethod(url)
     }
     thisFuture.onComplete((data: Try[T]) => ({
-      cleaner
+      cleaner(thisFuture)
       onComplete(data, url)
-
     }))
     thisFuture
   }
