@@ -12,7 +12,7 @@ import org.apache.commons.httpclient.util.URIUtil
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.protocol.BasicHttpContext
 import org.apache.http.util.EntityUtils
-import scala.util.Success
+import scala.util.{Try, Success}
 import com.nevilon.nomad.logs.Logs
 
 /**
@@ -28,7 +28,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
   private val linkProvider = new LinkProvider(startUrl, dbService)
   private val pageDataExtractor = new PageDataExtractor
-  private var futures = new ListBuffer[Future[ExtractedData]]
+  // private var futures = new ListBuffer[Future[ExtractedData]]
 
   private val domain = URLUtils.normalize(URLUtils.getDomainName(startUrl))
   private val filterProcessor = FilterProcessorFactory.get(domain)
@@ -103,59 +103,58 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     }
   }
 
-  private def crawlUrl(url: Url, filterProcessor: FilterProcessor): Future[ExtractedData] = {
-    implicit val ec = ExecutionContext.Implicits.global
+  def t(url: Url): ExtractedData = {
     val location = url.location
-    val thisFuture = future[ExtractedData] {
-      val fetchedContent = fetch(location)
-      count += 1
-      info("total crawled: " + count)
+    val fetchedContent = fetch(location)
+    count += 1
+    info("total crawled: " + count)
 
-      fetchedContent match {
-        case None => {
-          throw new RuntimeException("shit!")
-        } //exception
-        case Some(value) => {
-          value.content match {
-            case null => {
-              // this is a case for non html data, but we still need process fileId!
-              new ExtractedData(Nil, value)
-            }
-            case content => {
-              val page = pageDataExtractor.extractLinks(value.content, location)
-              info("links extracted: " + page.links.length + " from " + location)
-              //build urlrelations objects
-              val relations = page.links.map(item => {
-                val to = new Url(item.url)
-                new Relation(url, to)
-              })
-              //remove invalid links
-              val clearedLinks = URLUtils.clearUrlRelations(startUrl, relations.toList)
-              //pass to filter
-              val filteredRawUrlRelations = clearedLinks.map(relation => {
-                val action = filterProcessor.filterUrl(relation.to.location)
-                val toUrl = relation.to.updateAction(action)
-                new Relation(relation.from, toUrl)
-              })
-              //remove all links we needn't to crawl
-              val linksToProcess = filteredRawUrlRelations.filter(relation => {
-                if (relation.to.action == Action.Download) {
-                  // refactor this!
-                  true
-                } else {
-                  info("skipped url " + relation.to.location)
-                  false
-                }
-              })
-              new ExtractedData(linksToProcess, value)
-            }
+    fetchedContent match {
+      case None => {
+        throw new RuntimeException("shit!")
+      } //exception
+      case Some(value) => {
+        value.content match {
+          case null => {
+            // this is a case for non html data, but we still need process fileId!
+            new ExtractedData(Nil, value)
+          }
+          case content => {
+            val page = pageDataExtractor.extractLinks(value.content, location)
+            info("links extracted: " + page.links.length + " from " + location)
+            //build urlrelations objects
+            val relations = page.links.map(item => {
+              val to = new Url(item.url)
+              new Relation(url, to)
+            })
+            //remove invalid links
+            val clearedLinks = URLUtils.clearUrlRelations(startUrl, relations.toList)
+            //pass to filter
+            val filteredRawUrlRelations = clearedLinks.map(relation => {
+              val action = filterProcessor.filterUrl(relation.to.location)
+              val toUrl = relation.to.updateAction(action)
+              new Relation(relation.from, toUrl)
+            })
+            //remove all links we needn't to crawl
+            val linksToProcess = filteredRawUrlRelations.filter(relation => {
+              if (relation.to.action == Action.Download) {
+                // refactor this!
+                true
+              } else {
+                info("skipped url " + relation.to.location)
+                false
+              }
+            })
+            new ExtractedData(linksToProcess, value)
           }
         }
       }
     }
+  }
 
-    thisFuture onComplete {
-      // in what thread does this execs?
+
+  def c(t: Try[ExtractedData], url: Url) {
+    t match {
       case Success(extractedData) => {
         // and what about fail? do we need to change status?
         synchronized {
@@ -164,24 +163,23 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
             url.updateStatus(UrlStatus.Complete).
               updateFileId(extractedData.fetchedContent.gfsId)
           )
-          futures -= thisFuture
+          //futures -= thisFuture
           if (extractedData.relations == Nil) {
-            // refactor this - remove nulls and null for collections!
-            info("some non text/html file have been downloaded from " + location)
+            info("some non text/html file have been downloaded from " + url.location)
           } else {
             extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
           }
           initCrawling()
         }
       }
-      case _ => error("some king of shit during crawling " + location)
+      case _ => error("some king of shit during crawling " + url.location)
     }
-    thisFuture
   }
 
   private def initCrawling() {
-    val carousel = new Carousel(maxThreads, linkProvider)
-    carousel.setOnStart((url: Url) => crawlUrl(url, filterProcessor))
+    val carousel = new Carousel[ExtractedData](maxThreads, linkProvider)
+    carousel.setOnStart((url: Url) => t(url))
+    carousel.setOnComplete(c)
     carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.InProgress))))
     carousel.start()
   }
@@ -189,50 +187,6 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 }
 
 
-class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
-
-  private type FType = Future[ExtractedData]
-
-  private var futures = new ListBuffer[FType]
-
-  def stop() {}
-
-  def start() {
-    var hasData = true
-    while (futures.length < maxThreads && hasData) {
-      dataProvider.pop() match {
-        case None => {
-          hasData = false // exit from loop
-          info("sorry, no links to crawl")
-        }
-        case Some(url) => {
-          onBeforeStart(url)
-          futures += onStartMethod(url)
-          info("starting future for crawling " + url.location)
-        }
-      }
-    }
-  }
-
-  private var onStartMethod: (Url) => FType = null
-  private var onBeforeStart: (Url) => Unit = null
-
-  def setOnStart(method: (Url) => FType) {
-    onStartMethod = method
-  }
-
-
-  def setOnBeforeStart(method: (Url) => Unit) {
-    onBeforeStart = method
-  }
-
-
-  def setOnComplete() {}
-
-  //use either
-  def onFailure() {}
-
-}
 
 
 //refactor
