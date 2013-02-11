@@ -1,12 +1,13 @@
 package com.nevilon.nomad.crawler
 
 import org.apache.http.client.HttpClient
-import org.apache.http.{HttpResponse, HttpEntity}
+import org.apache.http.{HttpStatus, HttpResponse, HttpEntity}
 import org.apache.commons.httpclient.util.URIUtil
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.protocol.BasicHttpContext
 import com.nevilon.nomad.logs.Logs
 import javax.activation.MimeType
+import scala.Unit
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,6 +18,10 @@ import javax.activation.MimeType
 class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
 
   private var onExceptionHandler: (Exception) => Unit = null
+  private var onHttpErrorHandler: (Int) => Unit = null
+  private var onDataStreamHandler: (EntityParams, HttpEntity, Url) => Unit = null
+  private var onFinishHandler: () => Unit = null
+
 
   private def buildEntityParams(httpEntity: HttpEntity, url: String): EntityParams = {
     val mimeType = new MimeType(httpEntity.getContentType.getValue)
@@ -25,30 +30,47 @@ class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
   }
 
 
-  def load(method: (EntityParams, HttpEntity, Url) => Option[FetchedContent]): Option[FetchedContent] = {
+  def load() {
     val encodedUrl = URIUtil.encodeQuery(url.location)
     val httpGet = new HttpGet(encodedUrl)
     info("connecting to " + encodedUrl)
     try {
       val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
-      val entity: HttpEntity = response.getEntity
-      val entityParams = buildEntityParams(entity, url.location)
-      method(entityParams, entity, url)
+      val statusCode = response.getStatusLine.getStatusCode
+      if (statusCode == HttpStatus.SC_OK) {
+        val entity: HttpEntity = response.getEntity
+        val entityParams = buildEntityParams(entity, url.location)
+        onDataStreamHandler(entityParams, entity, url)
+      } else {
+        onHttpErrorHandler(statusCode)
+      }
     } catch {
       case e: Exception => {
-        info("error during crawling " + url, e)
         httpGet.abort()
-        onExceptionHandler
-        None
+        onExceptionHandler(e)
       }
     }
     finally {
       httpGet.abort()
+      onFinishHandler()
     }
+  }
+
+  def onDataStream(handler: (EntityParams, HttpEntity, Url) => Unit) {
+    onDataStreamHandler = handler
+
+  }
+
+  def onHttpError(handler: (Int) => Unit) {
+    onHttpErrorHandler = handler
   }
 
   def onException(handler: (Exception) => Unit) {
     onExceptionHandler = handler
+  }
+
+  def onFinish(handler: () => Unit) {
+    onFinishHandler = handler
   }
 
 }

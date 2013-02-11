@@ -53,28 +53,22 @@ class Relation(val from: Url, val to: Url) {
 
 class Url(
            val location: String, val status: UrlStatus.Value,
-           val id: String, val fileId: String,
-           val action: Action.Value
+           val id: String, val fileId: String
            ) {
 
-  def this(location: String) = this(location, UrlStatus.NEW, "none", "none", Action.None)
+  def this(location: String, status: UrlStatus.Value) = this(location, UrlStatus.NEW, "none", "none")
 
 
   def updateLocation(newLocation: String): Url = {
-    new Url(newLocation, status, id, fileId, action)
-  }
-
-
-  def updateAction(newAction: Action.Value): Url = {
-    new Url(location, status, id, fileId, newAction)
+    new Url(newLocation, status, id, fileId)
   }
 
   def updateStatus(newStatus: UrlStatus.Value): Url = {
-    new Url(location, newStatus, id, fileId, action)
+    new Url(location, newStatus, id, fileId)
   }
 
   def updateFileId(newFileId: String): Url = {
-    new Url(location, status, id, newFileId, action)
+    new Url(location, status, id, newFileId)
   }
 
 
@@ -84,7 +78,7 @@ class Url(
       //add fileId?
       new EqualsBuilder()
         .append(location, other.location)
-        .isEquals()
+        .isEquals
     } else {
       false
     }
@@ -93,7 +87,7 @@ class Url(
   override def hashCode(): Int = {
     new HashCodeBuilder()
       .append(location)
-      .toHashCode()
+      .toHashCode
   }
 }
 

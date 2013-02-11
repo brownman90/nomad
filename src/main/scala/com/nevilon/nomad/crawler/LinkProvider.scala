@@ -42,7 +42,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
        so here we need just find url in urls table and than check if domain is in white list(domains table)
 
      */
-    dbService.addOrUpdateUrl(new Url(url))
+    dbService.addOrUpdateUrl(new Url(url, UrlStatus.NEW))
   }
 
   def addToExtractedLinks(linkRelation: Relation) {
@@ -53,7 +53,9 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
     if (linksToCrawl.size == 0) {
       flushExtractedLinks()
       val links = loadLinksForCrawling(domain)
-      if (links.size == 0) None
+      if (links.size == 0) {
+        None
+      }
       else {
         linksToCrawl ++= links
         Some(linksToCrawl.pop())

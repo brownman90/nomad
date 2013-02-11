@@ -100,7 +100,7 @@ TitanDBService(recreateDb: Boolean) {
   }
 
 
-  def addOrUpdateUrl(url: Url): Vertex = {
+  def  addOrUpdateUrl(url: Url): Vertex = {
     val vertex = {
       getUrl(url.location) match {
         case None => {
@@ -113,7 +113,6 @@ TitanDBService(recreateDb: Boolean) {
     vertex.setProperty("status", url.status)
     vertex.setProperty("location", url.location)
     vertex.setProperty("fileId", url.fileId)
-    vertex.setProperty("action", url.action)
 
     vertex
   }

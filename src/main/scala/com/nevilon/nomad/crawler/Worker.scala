@@ -6,7 +6,7 @@ import com.nevilon.nomad.filter.{Action, FilterProcessorFactory}
 import org.apache.http.HttpEntity
 import java.io.{ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
-import scala.util.{Try, Success}
+import util.{Failure, Try, Success}
 import com.nevilon.nomad.logs.Logs
 
 /**
@@ -27,9 +27,8 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private val domain = URLUtils.normalize(URLUtils.getDomainName(startUrl))
   private val filterProcessor = FilterProcessorFactory.get(domain)
 
-  private val carousel = new Carousel[ExtractedData](maxThreads, linkProvider)
+  private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))
-  carousel.setOnComplete(onProcessingComplete)
   carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
 
 
@@ -43,59 +42,56 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private var count = 0
 
 
-  private def saveHttpEntity(entityParams: EntityParams, entity: HttpEntity, url: Url): Option[FetchedContent] = {
-    if (filterProcessor.filterEntity(entityParams) == Action.Download) {
-
-
-      val data: (InputStream, Option[String]) = {
-        if (entityParams.mimeType.getSubType.contains("html")) {
-          val contentAsTxt = EntityUtils.toString(entity)
-          (new ByteArrayInputStream(contentAsTxt.getBytes), Some(contentAsTxt))
-        } else {
-          (entity.getContent, None)
-        }
-      }
-
-
-      val gfsId = contentSaver.saveContent(data._1, url.location, entityParams.mimeType.getBaseType)
-      val fetchedContent = {
-        data._2 match {
-          case None => new FetchedContent(gfsId, entityParams, null)
-          case Some(content) => new FetchedContent(gfsId, entityParams, content)
-        }
-      }
-      Some(fetchedContent)
-    } else {
-      info("skip " + url)
-      //???
-      None
-    }
-  }
-
-  private def loadAndProcess(url: Url): ExtractedData = {
+  private def loadAndProcess(url: Url) {
     count += 1
     info("total crawled: " + count)
 
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {
+      dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))
       info("error during crawling " + url, e)
     })
-    fetcher.load(saveHttpEntity) match {
-      case None => {
-        throw new RuntimeException("shit!")
-      }
-      case Some(value) => {
-        value.content match {
-          case null => {
-            // this is a case for non html data, but we still need process fileId!
-            new ExtractedData(Nil, value)
-          }
-          case content => {
-            processHtmlContent(value, url)
+    fetcher.onHttpError((code: Int) => {
+      dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.HTTP_ERROR))
+      info("http error during crawling " + url.location + " error " + code)
+    })
+
+    fetcher.onFinish(() => {
+      carousel.start()
+    })
+
+    fetcher.onDataStream((entityParams: EntityParams, entity: HttpEntity, url: Url) => {
+      if (filterProcessor.filterEntity(entityParams) == Action.Download) {
+
+        val data: (InputStream, Option[String]) = {
+          if (entityParams.mimeType.getSubType.contains("html")) {
+            val contentAsTxt = EntityUtils.toString(entity)
+            (new ByteArrayInputStream(contentAsTxt.getBytes), Some(contentAsTxt))
+          } else {
+            (entity.getContent, None)
           }
         }
+
+        val gfsId = contentSaver.saveContent(data._1, url.location, entityParams.mimeType.getBaseType)
+        val fetchedContent = {
+          data._2 match {
+            case None => {
+              //binary file
+              new ExtractedData(Nil, new FetchedContent(gfsId, entityParams, null))
+            }
+            case Some(content) => {
+              //html file
+              processHtmlContent(new FetchedContent(gfsId, entityParams, content), url)
+            }
+          }
+        }
+        onProcessingComplete(fetchedContent, url)
+      } else {
+        dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.SKIP))
+        info("skipped entity " + url.location)
       }
-    }
+    })
+    fetcher.load()
   }
 
 
@@ -104,49 +100,39 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     info("links extracted: " + page.links.length + " from " + url.location)
     //build urlrelations objects
     val relations = page.links.map(item => {
-      new Relation(url, new Url(item.url))
+      new Relation(url, new Url(item.url, UrlStatus.NEW))
     })
     //remove invalid links
     val clearedLinks = URLUtils.clearUrlRelations(startUrl, relations.toList)
     //pass to filter
     val filteredRawUrlRelations = clearedLinks.map(relation => {
       val action = filterProcessor.filterUrl(relation.to.location)
-      val toUrl = relation.to.updateAction(action)
+
+      val status = {
+        action match {
+          case Action.Download => UrlStatus.NEW
+          case Action.Skip => {
+            info("skipped url " + relation.to.location)
+            UrlStatus.SKIP
+          }
+        }
+      }
+
+      val toUrl = relation.to.updateStatus(status)
       new Relation(relation.from, toUrl)
     })
-    //remove all links we needn't to crawl
-    val linksToProcess = filteredRawUrlRelations.filter(relation => {
-      if (relation.to.action == Action.Download) {
-        // refactor this!
-        true
-      } else {
-        info("skipped url " + relation.to.location)
-        false
-      }
-    })
-    new ExtractedData(linksToProcess, value)
+
+    new ExtractedData(filteredRawUrlRelations, value)
   }
 
-  private def onProcessingComplete(tryExtractedData: Try[ExtractedData], url: Url) {
-    tryExtractedData match {
-      case Success(extractedData) => {
-        // and what about fail? do we need to change status?
-        synchronized {
-          //ERROR and SKIP status also!!!
-          dbService.addOrUpdateUrl(
-            url.
-              updateStatus(UrlStatus.COMPLETE).
-              updateFileId(extractedData.fetchedContent.gfsId)
-          )
-          extractedData.relations match {
-            case Nil => info("some non text/html file have been downloaded from " + url.location)
-            case _ => extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
-          }
-          carousel.start()
-        }
-
-      }
-      case _ => error("some kind of shit during crawling " + url.location)
+  private def onProcessingComplete(extractedData: ExtractedData, url: Url) {
+    synchronized {
+      dbService.addOrUpdateUrl(
+        url.
+          updateStatus(UrlStatus.COMPLETE).
+          updateFileId(extractedData.fetchedContent.gfsId)
+      )
+      extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
     }
   }
 

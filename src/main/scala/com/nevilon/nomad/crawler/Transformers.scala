@@ -20,12 +20,10 @@ object Transformers {
     val statusProperty = vertex.getProperty("status")
     val status = UrlStatus.withName(statusProperty.toString)
     //get action value
-    val actionProperty = vertex.getProperty("action")
-    val action = Action.withName(actionProperty.toString)
     //get str value of property by calling toString
     implicit def AnyRef2String(property: AnyRef) = property.toString
     new Url(vertex.getProperty("location"), status, vertex.getId,
-      vertex.getProperty("fileId"),  action)
+      vertex.getProperty("fileId"))
   }
 
 }
