@@ -16,10 +16,13 @@ class UrlStatus {}
 
 object UrlStatus extends Enumeration {
 
-  val InProgress = Value("IN_PROGRESS")
-  val Skip = Value("SKIP")
-  val Complete = Value("COMPLETE")
-  val New = Value("NEW")
+  val IN_PROGRESS = Value("IN_PROGRESS")
+  val SKIP = Value("SKIP")
+  val COMPLETE = Value("COMPLETE")
+  val NEW = Value("NEW")
+  val ERROR = Value("ERROR")
+  val HTTP_ERROR = Value("HTTP_ERROR")
+  //val DROP  = Value("DROP")
 
 
 }
@@ -54,7 +57,7 @@ class Url(
            val action: Action.Value
            ) {
 
-  def this(location: String) = this(location, UrlStatus.New, "none", "none", Action.None)
+  def this(location: String) = this(location, UrlStatus.NEW, "none", "none", Action.None)
 
 
   def updateLocation(newLocation: String): Url = {

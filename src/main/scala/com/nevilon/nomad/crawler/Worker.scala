@@ -30,7 +30,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private val carousel = new Carousel[ExtractedData](maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))
   carousel.setOnComplete(onProcessingComplete)
-  carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.InProgress))))
+  carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
 
 
   def stop() {}
@@ -135,7 +135,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
           //ERROR and SKIP status also!!!
           dbService.addOrUpdateUrl(
             url.
-              updateStatus(UrlStatus.Complete).
+              updateStatus(UrlStatus.COMPLETE).
               updateFileId(extractedData.fetchedContent.gfsId)
           )
           extractedData.relations match {
@@ -152,5 +152,3 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
 
 
 }
-
-

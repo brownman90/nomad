@@ -180,7 +180,7 @@ TitanDBService(recreateDb: Boolean) {
     def traverse(): List[Url] = {
       //verify()
       val startUrl = Transformers.vertex2Url(startVertex)
-      if (startUrl.status == UrlStatus.New) {
+      if (startUrl.status == UrlStatus.NEW) {
         urls += startUrl
       }
       queue += startVertex
@@ -192,9 +192,9 @@ TitanDBService(recreateDb: Boolean) {
           if (!(closedSet contains (v))) {
             closedSet += v
             val url = Transformers.vertex2Url(v)
-            if (url.status == UrlStatus.New) {
+            if (url.status == UrlStatus.NEW) {
               urls += url
-            } else if (url.status == UrlStatus.Complete) {
+            } else if (url.status == UrlStatus.COMPLETE) {
               queue += v
             }
           }
