@@ -6,8 +6,8 @@ import com.nevilon.nomad.filter.{Action, FilterProcessorFactory}
 import org.apache.http.HttpEntity
 import java.io.{ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
-import util.{Failure, Try, Success}
-import com.nevilon.nomad.logs.Logs
+import com.nevilon.nomad.logs
+import logs.{Logs, Statistics}
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,6 +31,13 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   carousel.setOnStart((url: Url) => loadAndProcess(url))
   carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
 
+  private val counterGroup = Statistics.createCounterGroup(startUrl)
+
+  private val skippedUrlCounter = counterGroup.createCounter("skipped urls")
+  private val skippedFileCounter = counterGroup.createCounter("skipped files")
+  private val crawledCounter = counterGroup.createCounter("crawled urls")
+  private val errorCounter = counterGroup.createCounter("errors")
+  private val httpErrorCounter = counterGroup.createCounter("http errors")
 
   def stop() {}
 
@@ -39,21 +46,20 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
     carousel.start()
   }
 
-  private var count = 0
-
 
   private def loadAndProcess(url: Url) {
-    count += 1
-    info("total crawled: " + count)
-
+    crawledCounter.inc()
+   // info("total crawled: " + crawledCounter.getValue)
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {
       dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))
       info("error during crawling " + url, e)
+      errorCounter.inc()
     })
     fetcher.onHttpError((code: Int) => {
       dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.HTTP_ERROR))
       info("http error during crawling " + url.location + " error " + code)
+      httpErrorCounter.inc()
     })
 
     fetcher.onFinish(() => {
@@ -89,6 +95,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
       } else {
         dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.SKIP))
         info("skipped entity " + url.location)
+        skippedFileCounter.inc()
       }
     })
     fetcher.load()
@@ -112,6 +119,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
         action match {
           case Action.Download => UrlStatus.NEW
           case Action.Skip => {
+            skippedUrlCounter.inc()
             info("skipped url " + relation.to.location)
             UrlStatus.SKIP
           }

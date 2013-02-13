@@ -16,6 +16,10 @@ import java.io.{ByteArrayInputStream, File, FileOutputStream, InputStream}
 import org.apache.commons.io.FileUtils
 import org.apache.http.client.utils.URLEncodedUtils
 import org.apache.commons.httpclient.util.URIUtil
+import annotation.target
+import org.specs2.internal.scalaz.concurrent.Actor
+import java.util.{Timer, TimerTask}
+import com.nevilon.nomad.logs.{Tabulator, Statistics, CounterGroup}
 
 /**
  * Created with IntelliJ IDEA.
@@ -41,8 +45,7 @@ class Master {
     //run each in separate thread?
     // or run thread inside crawler?
     logger.info("starting workerks")
-    //
-    val worker = new Worker("http://nlp.stanford.edu", MAX_THREADS, httpClient, dbService)
+    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
     worker.begin()
   }
 
@@ -50,4 +53,17 @@ class Master {
     httpClient.getConnectionManager.shutdown()
   }
 
+  val timerTask = new TimerTask {
+    def run() {
+      Console println Statistics.buildStatisticsTable()
+    }
+  }
+
+  val timer = new Timer()
+  timer.schedule(timerTask, 0, 5000)
+
+  //timer.cancel()
+
 }
+
+
