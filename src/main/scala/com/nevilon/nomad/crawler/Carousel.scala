@@ -30,7 +30,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
         dataProvider.pop() match {
           case None => {
             hasData = false // exit from loop
-            info("sorry, no links to crawl " + futures.size)
+            info("sorry, no links to crawl ")
           }
           case Some(url) => {
             onBeforeStart(url)

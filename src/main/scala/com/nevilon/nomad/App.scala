@@ -1,5 +1,6 @@
 package com.nevilon.nomad
 
+import boot.SeedReader
 import crawler.Master
 
 /**
@@ -11,7 +12,10 @@ import crawler.Master
 object App {
 
   def main(args: Array[String]) {
-    val master = new Master
+    val seedsPath =  args(0)
+    val seedReader = new SeedReader(seedsPath)
+
+    val master = new Master(seedReader.getSeeds)
     master.startCrawling()
     Thread.sleep(10000000)
   }

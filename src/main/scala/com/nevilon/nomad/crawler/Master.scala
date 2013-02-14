@@ -1,6 +1,6 @@
 package com.nevilon.nomad.crawler
 
-import collection.mutable.ListBuffer
+import collection.mutable.{ArrayBuffer, ListBuffer}
 import concurrent._
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpGet
@@ -20,6 +20,7 @@ import annotation.target
 import org.specs2.internal.scalaz.concurrent.Actor
 import java.util.{Timer, TimerTask}
 import com.nevilon.nomad.logs.{Logs, Tabulator, Statistics, CounterGroup}
+import java.util
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,15 +29,22 @@ import com.nevilon.nomad.logs.{Logs, Tabulator, Statistics, CounterGroup}
  * Time: 7:51 AM
  */
 
-class Master extends Logs {
+class Master(seeds: List[String]) extends Logs {
+
+  private var seedsQueue: ListBuffer[String] = new ListBuffer[String]
+  seeds.foreach(item => seedsQueue += item)
 
   //add delay?
   //headers like in browser
   private val MAX_THREADS = 5
-  private val NUM_OF_DOMAINS = 1
+  private val NUM_OF_WORKERS = 4
 
-  private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
+  private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_WORKERS, MAX_THREADS)
   private val dbService = new TitanDBService(true)
+
+  private val timer = new Timer()
+
+  private val workers = new ArrayBuffer[Worker]
 
   private val timerTask = new TimerTask {
     def run() {
@@ -44,22 +52,33 @@ class Master extends Logs {
     }
   }
 
-  private val timer = new Timer()
+
+  private def loadWatchers() {
+    while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) {
+      val (head, tail) = (seedsQueue.head,seedsQueue.tail)
+      seedsQueue = tail
+      val worker = new Worker(head, MAX_THREADS, httpClient, dbService, onCrawlingComplete)
+      worker.begin()
+      workers += worker
+    }
+  }
 
   def startCrawling() {
     startTimer()
     info("start workerks")
-    val worker = new Worker("http://nlp.stanford.edu/", MAX_THREADS, httpClient, dbService, onCrawlingComplete)
-    worker.begin()
+    loadWatchers()
   }
 
   def stopCrawling() {
     httpClient.getConnectionManager.shutdown()
   }
 
-  def onCrawlingComplete() {
-    info("I'm dead!")
-    stopTimer()
+  def onCrawlingComplete(worker: Worker) {
+    info("I'm dead! " + worker.startUrl)
+    workers -= worker
+    if (workers.isEmpty) {
+      stopTimer()
+    }
   }
 
 

@@ -16,9 +16,9 @@ import logs.{Logs, Statistics}
  * Time: 10:20 AM
  */
 
-class Worker(startUrl: String, val maxThreads: Int,
+class Worker(val startUrl: String, val maxThreads: Int,
              httpClient: HttpClient, dbService: TitanDBService,
-              onCrawlingComplete:()=>Unit) extends Logs {
+              onCrawlingComplete:(Worker)=>Unit) extends Logs {
 
   private val fileStorage = new FileStorage()
 
@@ -32,7 +32,7 @@ class Worker(startUrl: String, val maxThreads: Int,
   private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))
   carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
-  carousel.setOnCrawlingComplete(onCrawlingComplete)
+  carousel.setOnCrawlingComplete(()=>this)
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
 
@@ -42,7 +42,6 @@ class Worker(startUrl: String, val maxThreads: Int,
   private val errorCounter = counterGroup.createCounter("errors")
   private val httpErrorCounter = counterGroup.createCounter("http errors")
 
-  private var onWorkComplete: () => Unit = null
 
 
   def stop() {}
@@ -50,11 +49,6 @@ class Worker(startUrl: String, val maxThreads: Int,
   def begin() {
     linkProvider.findOrCreateUrl(startUrl)
     carousel.start()
-  }
-
-
-  def setOnWorkComplete(method: () => Unit) {
-    onWorkComplete = method
   }
 
 
