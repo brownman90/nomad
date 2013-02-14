@@ -21,6 +21,8 @@ import org.specs2.internal.scalaz.concurrent.Actor
 import java.util.{Timer, TimerTask}
 import com.nevilon.nomad.logs.{Logs, Tabulator, Statistics, CounterGroup}
 import java.util
+import collection.mutable
+import EDU.oswego.cs.dl.util.concurrent.SyncSet
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,7 +33,7 @@ import java.util
 
 class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs {
 
-  private var seedsQueue: ListBuffer[String] = new ListBuffer[String]
+  private var seedsQueue = new mutable.SynchronizedQueue[String]
   seeds.foreach(item => seedsQueue += item)
 
   //add delay?
@@ -51,9 +53,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
 
   private def loadWatchers() {
     while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) {
-      val (head, tail) = (seedsQueue.head, seedsQueue.tail)
-      seedsQueue = tail
-      val worker = new Worker(head, MAX_THREADS, httpClient, dbService, onCrawlingComplete)
+      val worker = new Worker(seedsQueue.dequeue(), MAX_THREADS, httpClient, dbService, onCrawlingComplete)
       worker.begin()
       workers += worker
     }
