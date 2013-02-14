@@ -38,7 +38,16 @@ class Master extends Logs {
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
   private val dbService = new TitanDBService(true)
 
+  private val timerTask = new TimerTask {
+    def run() {
+      info("\n" + Statistics.buildStatisticsTable())
+    }
+  }
+
+  private val timer = new Timer()
+
   def startCrawling() {
+    startTimer()
     info("start workerks")
     val worker = new Worker("http://nlp.stanford.edu/", MAX_THREADS, httpClient, dbService, onCrawlingComplete)
     worker.begin()
@@ -50,19 +59,18 @@ class Master extends Logs {
 
   def onCrawlingComplete() {
     info("I'm dead!")
+    stopTimer()
   }
 
 
-  val timerTask = new TimerTask {
-    def run() {
-      info("\n"+Statistics.buildStatisticsTable())
-    }
+  def startTimer() {
+    timer.schedule(timerTask, 0, 5000)
   }
 
-  val timer = new Timer()
-  timer.schedule(timerTask, 0, 5000)
+  def stopTimer() {
+    timer.cancel()
+  }
 
-  //timer.cancel()
 
 }
 
