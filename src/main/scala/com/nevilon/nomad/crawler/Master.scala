@@ -29,7 +29,7 @@ import java.util
  * Time: 7:51 AM
  */
 
-class Master(seeds: List[String]) extends Logs {
+class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs {
 
   private var seedsQueue: ListBuffer[String] = new ListBuffer[String]
   seeds.foreach(item => seedsQueue += item)
@@ -41,21 +41,17 @@ class Master(seeds: List[String]) extends Logs {
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_WORKERS, MAX_THREADS)
   private val dbService = new TitanDBService(true)
-
-  private val timer = new Timer()
-
   private val workers = new ArrayBuffer[Worker]
 
-  private val timerTask = new TimerTask {
-    def run() {
-      info("\n" + Statistics.buildStatisticsTable())
-    }
+  def startCrawling() {
+    startPrinting()
+    info("start workerks")
+    loadWatchers()
   }
-
 
   private def loadWatchers() {
     while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) {
-      val (head, tail) = (seedsQueue.head,seedsQueue.tail)
+      val (head, tail) = (seedsQueue.head, seedsQueue.tail)
       seedsQueue = tail
       val worker = new Worker(head, MAX_THREADS, httpClient, dbService, onCrawlingComplete)
       worker.begin()
@@ -63,34 +59,18 @@ class Master(seeds: List[String]) extends Logs {
     }
   }
 
-  def startCrawling() {
-    startTimer()
-    info("start workerks")
-    loadWatchers()
-  }
-
-  def stopCrawling() {
+  private def shutdown() {
     httpClient.getConnectionManager.shutdown()
   }
 
-  def onCrawlingComplete(worker: Worker) {
+  private def onCrawlingComplete(worker: Worker) {
     info("I'm dead! " + worker.startUrl)
     workers -= worker
     if (workers.isEmpty) {
-      stopTimer()
+      stopPrinting()
+      shutdown()
     }
   }
 
 
-  def startTimer() {
-    timer.schedule(timerTask, 0, 5000)
-  }
-
-  def stopTimer() {
-    timer.cancel()
-  }
-
-
 }
-
-
