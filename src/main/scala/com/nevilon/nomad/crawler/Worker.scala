@@ -16,7 +16,9 @@ import logs.{Logs, Statistics}
  * Time: 10:20 AM
  */
 
-class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbService: TitanDBService) extends Logs {
+class Worker(startUrl: String, val maxThreads: Int,
+             httpClient: HttpClient, dbService: TitanDBService,
+              onCrawlingComplete:()=>Unit) extends Logs {
 
   private val fileStorage = new FileStorage()
 
@@ -30,6 +32,7 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))
   carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
+  carousel.setOnCrawlingComplete(onCrawlingComplete)
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
 
@@ -39,6 +42,9 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   private val errorCounter = counterGroup.createCounter("errors")
   private val httpErrorCounter = counterGroup.createCounter("http errors")
 
+  private var onWorkComplete: () => Unit = null
+
+
   def stop() {}
 
   def begin() {
@@ -47,9 +53,13 @@ class Worker(startUrl: String, val maxThreads: Int, httpClient: HttpClient, dbSe
   }
 
 
+  def setOnWorkComplete(method: () => Unit) {
+    onWorkComplete = method
+  }
+
+
   private def loadAndProcess(url: Url) {
     crawledCounter.inc()
-   // info("total crawled: " + crawledCounter.getValue)
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {
       dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))

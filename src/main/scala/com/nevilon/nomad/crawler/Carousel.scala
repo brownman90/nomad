@@ -5,6 +5,7 @@ import collection.mutable.ListBuffer
 import concurrent._
 import scala.util.Try
 import scala.Some
+import collection.mutable
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,22 +15,22 @@ import scala.Some
  */
 class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
-
-  private var futures = new ListBuffer[Future[Unit]]
+  private var futures = new mutable.HashSet[Future[Unit]] with mutable.SynchronizedSet[Future[Unit]]
 
   private var onStartMethod: (Url) => Unit = null
   private var onBeforeStart: (Url) => Unit = null
+  private var onCrawlingComplete: () => Unit = null
 
   def stop() {}
 
   def start() {
     this.synchronized {
       var hasData = true
-      while (futures.length < maxThreads && hasData) {
+      while (futures.size < maxThreads && hasData) {
         dataProvider.pop() match {
           case None => {
             hasData = false // exit from loop
-            info("sorry, no links to crawl")
+            info("sorry, no links to crawl " + futures.size)
           }
           case Some(url) => {
             onBeforeStart(url)
@@ -48,8 +49,9 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
       onStartMethod(url)
     }
     thisFuture.onComplete((data: Try[Unit]) => ({
-      this.synchronized {
-        futures -= thisFuture
+      futures -= thisFuture
+      if (futures.isEmpty) {
+        onCrawlingComplete()
       }
     }))
     thisFuture
@@ -61,6 +63,10 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
   def setOnBeforeStart(method: (Url) => Unit) {
     onBeforeStart = method
+  }
+
+  def setOnCrawlingComplete(method: () => Unit) {
+    onCrawlingComplete = method
   }
 
 }

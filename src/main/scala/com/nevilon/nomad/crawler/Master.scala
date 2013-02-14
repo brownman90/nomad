@@ -19,7 +19,7 @@ import org.apache.commons.httpclient.util.URIUtil
 import annotation.target
 import org.specs2.internal.scalaz.concurrent.Actor
 import java.util.{Timer, TimerTask}
-import com.nevilon.nomad.logs.{Tabulator, Statistics, CounterGroup}
+import com.nevilon.nomad.logs.{Logs, Tabulator, Statistics, CounterGroup}
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,24 +28,19 @@ import com.nevilon.nomad.logs.{Tabulator, Statistics, CounterGroup}
  * Time: 7:51 AM
  */
 
-class Master {
-
-  private val logger = LogManager.getLogger(this.getClass.getName)
+class Master extends Logs {
 
   //add delay?
   //headers like in browser
-  private val MAX_THREADS = 10
+  private val MAX_THREADS = 5
   private val NUM_OF_DOMAINS = 1
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_DOMAINS, MAX_THREADS)
-  private val dbService = new TitanDBService(true) //DBService
-
+  private val dbService = new TitanDBService(true)
 
   def startCrawling() {
-    //run each in separate thread?
-    // or run thread inside crawler?
-    logger.info("starting workerks")
-    val worker = new Worker("http://linux.org.ru", MAX_THREADS, httpClient, dbService)
+    info("start workerks")
+    val worker = new Worker("http://nlp.stanford.edu/", MAX_THREADS, httpClient, dbService, onCrawlingComplete)
     worker.begin()
   }
 
@@ -53,9 +48,14 @@ class Master {
     httpClient.getConnectionManager.shutdown()
   }
 
+  def onCrawlingComplete() {
+    info("I'm dead!")
+  }
+
+
   val timerTask = new TimerTask {
     def run() {
-      Console println Statistics.buildStatisticsTable()
+      info("\n"+Statistics.buildStatisticsTable())
     }
   }
 

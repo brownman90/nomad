@@ -2,8 +2,16 @@ def filterUrl(url) {
     // if (url.contains(".pdf")) {
     //     return false
     // }
-    if(url.contains("http://nlp.stanford.edu")){
-        if (url.contains(".pdf") || url.contains(".tgz") || url.contains(".ppt") ){return false}
+    if (url.contains("http://aaai.org/ojs/index.php/aimagazine/search")
+
+
+    ) {
+        return false
+    }
+    if (url.contains("http://nlp.stanford.edu")) {
+        if (url.contains(".pdf") || url.contains(".tgz")) {
+            return false
+        }
 
     }
     if (url.contains("http://consc.net/online/")) {
