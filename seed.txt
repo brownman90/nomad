@@ -1,6 +1,1 @@
-http://nlp.stanford.edu/
-http://aaai.org
-http://linux.org.ru
-http://research.microsoft.com/
 http://lenta.ru
-http://aclweb.org

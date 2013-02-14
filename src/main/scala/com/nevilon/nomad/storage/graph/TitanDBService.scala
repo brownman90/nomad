@@ -5,7 +5,7 @@ import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import scala.Predef._
 import com.nevilon.nomad._
-import com.tinkerpop.blueprints.{Direction, Vertex}
+import com.tinkerpop.blueprints.{TransactionalGraph, Direction, Vertex}
 import crawler.{Url, UrlStatus, Relation, Transformers}
 import filter.Action
 import java.util.UUID
@@ -17,6 +17,7 @@ import org.eclipse.jdt.internal.core.Assert
 import org.apache.log4j.LogManager
 import scala.collection.JavaConversions._
 import collection.mutable.ListBuffer
+import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,134 +28,143 @@ import collection.mutable.ListBuffer
 class
 TitanDBService(recreateDb: Boolean) {
 
-  private val logger = LogManager.getLogger(this.getClass.getName)
   private var graph: TitanGraph = null
 
   connect()
 
   def disconnect() {
-    graph.shutdown()
+    synchronized {
+      graph.shutdown()
+    }
   }
 
   private def connect() {
-    val path: String = "/tmp/dbstorage/"
-    val dbDir: File = new File(path)
-    //drop db
-    if (recreateDb && dbDir.exists()) {
-      FileUtils.deleteDirectory(dbDir)
-    }
-    var wasCreated = false
-    if (!dbDir.exists) {
-      dbDir.mkdir
-      wasCreated = true
+    synchronized {
       /*
-         create indexes and so on
-       */
-    }
-    val conf: Configuration = new BaseConfiguration
-    conf.setProperty("storage.directory", path)
-    conf.setProperty("storage.backend", "berkeleyje")
-    conf.setProperty("ids.flush", "true")
-    graph = TitanFactory.openInMemoryGraph() //open(conf)
-    //graph = TitanFactory.open(conf)
-    if (wasCreated) {
+      val path: String = "/tmp/berk/"
+      val dbDir: File = new File(path)
+      //drop db
+      if (recreateDb && dbDir.exists()) {
+        FileUtils.deleteDirectory(dbDir)
+      }
+      var wasCreated = false
+      if (!dbDir.exists) {
+        dbDir.mkdir
+        wasCreated = true
+      }
+      */
+      val conf: Configuration = new BaseConfiguration
+      conf.setProperty("storage.backend", "cassandra")
+      conf.setProperty("storage.hostname", "127.0.0.1")
+      // conf.setProperty("ids.flush", "true")
+      //   conf.setProperty("buffer-size", "100")
+
+      /*
+        conf.setProperty("storage.directory", path)
+      //  conf.setProperty("buffer-size", "1000")
+        conf.setProperty("storage.backend", "berkeleyje")
+        conf.setProperty("ids.flush", "true")
+        conf.setProperty("storage.cache-percentage",1)
+        conf.setProperty("storage.transactions","false")
+        */
+
+      // conf.setProperty("storage.transactions",true)
+      //  graph = TitanFactory.openInMemoryGraph() //open(conf)
+
+      graph = TitanFactory.open(conf)
+      //if (wasCreated) {
+     // val x = graph.getIndexedKeys(classOf[Vertex])
+     // println(x)
+
       graph.createKeyIndex("location", classOf[Vertex])
+      //}
+      graph.stopTransaction(Conclusion.SUCCESS)
+    //  graph.startTransaction()
+
+   //   val t = getBFSLinks("http://lenta.ru",5)
+    //  println(t)
+
+
     }
   }
 
 
   def getOrCreateUrl(url: Url): Vertex = {
-    getUrl(url.location) match {
-      case None => {
-        //create url
-        addOrUpdateUrl(url)
+    synchronized {
+      getUrl(url.location) match {
+        case None => {
+          //create url
+          addOrUpdateUrl(url)
+        }
+        case Some(doc) => {
+          doc
+        }
       }
-      case Some(doc) => {
-        doc
-      }
+
     }
+
   }
 
 
   private def getUrl(url: String): Option[Vertex] = {
-    val vertices = graph.getVertices("location", url)
-    if (vertices.isEmpty) {
-      None
-    } else {
-      if (vertices.size > 1) {
-        throw new RuntimeException("By some really strange reasons there are more than one page with this url!")
+    synchronized {
+      val vertices = graph.getVertices("location", url)
+      if (vertices.isEmpty) {
+        None
       } else {
-        Some(vertices.iterator.next())
+        if (vertices.size > 1) {
+          throw new RuntimeException("By some really strange reasons there are more than one page with this url!")
+        } else {
+          Some(vertices.iterator.next())
+        }
       }
     }
   }
 
   def linkUrls(relations: List[Relation]) {
-    relations.foreach(relation => {
-      val parentPage = getOrCreateUrl(relation.from)
-      val childPage = getOrCreateUrl(relation.to)
-      graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
-    })
+    synchronized {
+      val tx = graph.startTransaction()
 
-    logger.info("total vertices " + graph.getVertices.iterator().size)
+      relations.foreach(relation => {
+        val parentPage = getOrCreateUrl(relation.from)
+        val childPage = getOrCreateUrl(relation.to)
+        graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
+      })
+      tx.stopTransaction(Conclusion.SUCCESS)
+    }
   }
 
 
-  def  addOrUpdateUrl(url: Url): Vertex = {
-    val vertex = {
-      getUrl(url.location) match {
-        case None => {
-          graph.addVertex(UUID.randomUUID().toString)
+  def addOrUpdateUrl(url: Url): Vertex = {
+    synchronized {
+      val tx = graph.startTransaction()
+      val vertex = {
+        getUrl(url.location) match {
+          case None => {
+            graph.addVertex(UUID.randomUUID().toString)
+          }
+          case Some(v) => v
         }
-        case Some(v) => v
       }
-    }
 
-    vertex.setProperty("status", url.status)
-    vertex.setProperty("location", url.location)
-    vertex.setProperty("fileId", url.fileId)
+      vertex.setProperty("status", url.status)
+      //  graph.createKeyIndex("location", classOf[Vertex])
 
-    vertex
-  }
+      vertex.setProperty("location", url.location)
+      vertex.setProperty("fileId", url.fileId)
+      tx.stopTransaction(Conclusion.SUCCESS)
 
-  /*
-  //status - always not null!!!
-  def updateUrl(url: Url) {
-    getUrl(url.location) match {
-      case None => throw new RuntimeException("Sorry, url not found!")
-      case Some(vertex) => {
-        //Assert.isNotNull(urlStatus)
-        vertex.setProperty("status", url.status)
-        vertex.setProperty("location", url.location)
-        vertex.setProperty("fileId", url.fileId)
-        vertex.setProperty("action", url.action)
-      }
+      vertex
     }
   }
-  */
 
-
-  /*
-  def verify() {
-    val urls = new ListBuffer[String]
-    val vertices = graph.getVertices
-    for (v <- vertices) {
-      urls += v.getProperty("location").toString
-    }
-
-    val counts = urls.groupBy(w => w).mapValues(_.size)
-    counts.foreach((i)=>{
-      if ((i._2)>1){
-         println("fuck")
-      }
-    })
-  }
-  */
 
   def getBFSLinks(url: String, limit: Int): List[Url] = {
-    val rootVertex = getUrl(url).get //graph.getVertices("location",url).iterator()
-    val traverser = new BFSTraverser(rootVertex, limit)
-    traverser.traverse()
+    synchronized {
+      val rootVertex = getUrl(url).get //graph.getVertices("location",url).iterator()
+      val traverser = new BFSTraverser(rootVertex, limit)
+      traverser.traverse()
+    }
   }
 
   class BFSTraverser(val startVertex: Vertex, val limit: Int) {

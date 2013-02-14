@@ -36,14 +36,14 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private var seedsQueue = new mutable.SynchronizedQueue[String]
   seeds.foreach(item => seedsQueue += item)
 
-  //add delay?
-  //headers like in browser
-  private val MAX_THREADS = 5
+  private val MAX_THREADS = 10
   private val NUM_OF_WORKERS = 4
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_WORKERS, MAX_THREADS)
   private val dbService = new TitanDBService(true)
   private val workers = new ArrayBuffer[Worker]
+
+  private val fileStorage = new FileStorage()
 
   def startCrawling() {
     startPrinting()
@@ -53,7 +53,8 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
 
   private def loadWatchers() {
     while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) {
-      val worker = new Worker(seedsQueue.dequeue(), MAX_THREADS, httpClient, dbService, onCrawlingComplete)
+      val worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
+        httpClient, dbService, onCrawlingComplete, fileStorage)
       worker.begin()
       workers += worker
     }

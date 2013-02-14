@@ -18,9 +18,7 @@ import logs.{Logs, Statistics}
 
 class Worker(val startUrl: String, val maxThreads: Int,
              httpClient: HttpClient, dbService: TitanDBService,
-              onCrawlingComplete:(Worker)=>Unit) extends Logs {
-
-  private val fileStorage = new FileStorage()
+              onCrawlingComplete:(Worker)=>Unit, fileStorage:FileStorage) extends Logs {
 
   private val contentSaver = new ContentSaver(fileStorage)
   private val linkProvider = new LinkProvider(startUrl, dbService)
@@ -52,8 +50,11 @@ class Worker(val startUrl: String, val maxThreads: Int,
   }
 
 
-  private def loadAndProcess(url: Url) {
+  private def loadAndProcess( url2: Url) {
     crawledCounter.inc()
+    val url =   url2.updateStatus(UrlStatus.IN_PROGRESS)
+    dbService.addOrUpdateUrl(url)
+
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {
       dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))
