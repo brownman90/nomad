@@ -24,7 +24,7 @@ class TitanDBServiceTest {
 //      }
 //      case Some(vertex) => Assert.assertEquals(url_1.getProperty("location"), vertex.getProperty("location"))
 //    }
-//    service.disconnect()
+//    service.shutdown()
 //  }
 //
 //  @Test def makeLinkTest() {
@@ -68,7 +68,7 @@ class TitanDBServiceTest {
 //    }
 //    Assert.assertEquals(relations, extractedRelations)
 //    //close
-//    service.disconnect()
+//    service.shutdown()
 //  }
 //
 //
@@ -95,7 +95,7 @@ class TitanDBServiceTest {
 //    val bfsLinks = service.getBFSLinks("http://lenta.ru/", 1000)
 //    println("bfs links:" + bfsLinks.length)
 //    //close
-//    service.disconnect()
+//    service.shutdown()
 //  }
 //
 //

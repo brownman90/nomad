@@ -29,7 +29,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
 
   private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))
-  carousel.setOnBeforeStart((url: Url) => (dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
+  carousel.setOnBeforeStart((url: Url) => (dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
   carousel.setOnCrawlingComplete(()=>this)
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
@@ -53,16 +53,16 @@ class Worker(val startUrl: String, val maxThreads: Int,
   private def loadAndProcess( url2: Url) {
     crawledCounter.inc()
     val url =   url2.updateStatus(UrlStatus.IN_PROGRESS)
-    dbService.addOrUpdateUrl(url)
+    dbService.saveOrUpdateUrl(url)
 
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {
-      dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))
+      dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))
       info("error during crawling " + url, e)
       errorCounter.inc()
     })
     fetcher.onHttpError((code: Int) => {
-      dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.HTTP_ERROR))
+      dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.HTTP_ERROR))
       info("http error during crawling " + url.location + " error " + code)
       httpErrorCounter.inc()
     })
@@ -98,7 +98,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
         }
         onProcessingComplete(fetchedContent, url)
       } else {
-        dbService.addOrUpdateUrl(url.updateStatus(UrlStatus.SKIP))
+        dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.SKIP))
         info("skipped entity " + url.location)
         skippedFileCounter.inc()
       }
@@ -140,7 +140,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
 
   private def onProcessingComplete(extractedData: ExtractedData, url: Url) {
     synchronized {
-      dbService.addOrUpdateUrl(
+      dbService.saveOrUpdateUrl(
         url.
           updateStatus(UrlStatus.COMPLETE).
           updateFileId(extractedData.fetchedContent.gfsId)

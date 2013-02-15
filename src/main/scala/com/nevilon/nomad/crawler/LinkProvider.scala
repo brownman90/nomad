@@ -42,7 +42,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
        so here we need just find url in urls table and than check if domain is in white list(domains table)
 
      */
-    dbService.addOrUpdateUrl(new Url(url, UrlStatus.NEW))
+    dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
   }
 
   def addToExtractedLinks(linkRelation: Relation) {
@@ -81,7 +81,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
     val bfsLinks = dbService.getBFSLinks(startUrl, BFS_LIMIT)
     logger.info("bfs links loaded: " + bfsLinks.size)
     if (bfsLinks.size>20){
-    //  dbService.disconnect()
+    //  dbService.shutdown()
     }
     bfsLinks.toList
 
