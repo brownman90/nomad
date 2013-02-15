@@ -1,22 +1,16 @@
 package com.nevilon.nomad.storage.graph
 
-import java.io.File
 import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import scala.Predef._
 import com.nevilon.nomad._
 import com.tinkerpop.blueprints.{ThreadedTransactionalGraph, TransactionalGraph, Direction, Vertex}
 import crawler.{Url, UrlStatus, Relation, Transformers}
-import filter.Action
 import java.util.UUID
-import org.apache.commons.io.FileUtils
 import collection.mutable
 import com.nevilon.nomad.crawler.UrlStatus
 import scala.Some
-import org.eclipse.jdt.internal.core.Assert
-import org.apache.log4j.LogManager
 import scala.collection.JavaConversions._
-import collection.mutable.ListBuffer
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
 
 /**
@@ -26,96 +20,15 @@ import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
  * Time: 3:49 AM
  */
 
-trait GraphStorage {
-
-  def getGraph(): TitanGraph
-
-  def shutdown()
-
-}
-
-class CassandraGraphStorage extends GraphStorage {
-
-  private val graph = {
-    val conf: Configuration = new BaseConfiguration
-    conf.setProperty("storage.backend", "cassandra")
-    conf.setProperty("storage.hostname", "127.0.0.1")
-    val graph = TitanFactory.open(conf)
-    graph.createKeyIndex("location", classOf[Vertex])
-    graph.stopTransaction(Conclusion.SUCCESS)
-    graph
-  }
-
-  def getGraph() = graph
-
-  def shutdown() {
-    graph.shutdown()
-  }
-}
-
-
-class BerkeleyGraphStorage extends GraphStorage {
-
-  private val graph = {
-
-    val path: String = "/tmp/berk/"
-    val conf: Configuration = new BaseConfiguration
-
-    conf.setProperty("storage.directory", path)
-    conf.setProperty("buffer-size", "1000")
-    conf.setProperty("storage.backend", "berkeleyje")
-    conf.setProperty("ids.flush", "true")
-    conf.setProperty("storage.cache-percentage", 1)
-    conf.setProperty("storage.transactions", "false")
-
-    val graph = TitanFactory.open(conf)
-    graph.createKeyIndex("location", classOf[Vertex])
-    graph.stopTransaction(Conclusion.SUCCESS)
-    graph
-  }
-
-  def getGraph() = graph
-
-  def shutdown() {
-    graph.shutdown()
-  }
-
-}
-
-class InMemoryGraphStorage extends GraphStorage {
-
-  private val graph = TitanFactory.openInMemoryGraph()
-
-  def getGraph() = graph
-
-  def shutdown() {
-    graph.shutdown()
-  }
-
-}
-
 
 class TitanDBService(recreateDb: Boolean) {
 
-  private var graph: TitanGraph = null
-
-  connect()
+  private val connector = new BerkeleyGraphStorageConnector
+  private val graph = connector.getGraph
 
   def disconnect() {
     synchronized {
-      graph.shutdown()
-    }
-  }
-
-  private def connect() {
-    synchronized {
-      val conf: Configuration = new BaseConfiguration
-      conf.setProperty("storage.backend", "cassandra")
-      conf.setProperty("storage.hostname", "127.0.0.1")
-
-      graph = TitanFactory.open(conf)
-      graph.createKeyIndex("location", classOf[Vertex])
-      graph.stopTransaction(Conclusion.SUCCESS)
+      connector.shutdown()
     }
   }
 
@@ -133,7 +46,6 @@ class TitanDBService(recreateDb: Boolean) {
       }
     }
   }
-
 
   private def getUrl(url: String): Option[Vertex] = {
     synchronized {
