@@ -1,10 +1,9 @@
 package com.nevillon.nomad
 
-import org.junit.{Assert, Test}
+import org.junit.Test
 import groovy.lang.{GroovyClassLoader, GroovyObject}
 import java.io.File
 import collection.mutable.ListBuffer
-import java.util
 
 /**
  * Created with IntelliJ IDEA.

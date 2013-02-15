@@ -7,11 +7,8 @@ import org.apache.http.{HeaderElement, HeaderElementIterator, HttpResponse}
 import org.apache.http.protocol.{HTTP, HttpContext}
 import org.apache.http.message.BasicHeaderElementIterator
 import org.apache.http.conn.scheme.{PlainSocketFactory, Scheme, SchemeRegistry}
-import org.apache.http.conn.ssl.{X509HostnameVerifier, TrustStrategy, SSLSocketFactory}
-import com.sun.net.ssl.{HostnameVerifier, SSLContext}
-import javax.security.cert.X509Certificate
+import org.apache.http.conn.ssl.{TrustStrategy, SSLSocketFactory}
 import java.security.cert
-import javax.net.ssl.TrustManager
 
 /**
  * Created with IntelliJ IDEA.

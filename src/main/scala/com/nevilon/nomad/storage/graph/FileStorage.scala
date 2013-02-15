@@ -3,7 +3,7 @@ package com.nevilon.nomad.storage.graph
 import com.mongodb.casbah.commons.conversions.scala._
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.Imports._
-import java.io.{InputStream, FileInputStream}
+import java.io.InputStream
 
 
 /**

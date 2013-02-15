@@ -1,7 +1,6 @@
 package com.nevilon.nomad.crawler
 
 import com.tinkerpop.blueprints.Vertex
-import com.nevilon.nomad.filter.Action
 
 /**
  * Created with IntelliJ IDEA.

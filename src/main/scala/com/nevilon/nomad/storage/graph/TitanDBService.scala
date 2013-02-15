@@ -1,11 +1,9 @@
 package com.nevilon.nomad.storage.graph
 
-import org.apache.commons.configuration.{BaseConfiguration, Configuration}
-import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import scala.Predef._
 import com.nevilon.nomad._
-import com.tinkerpop.blueprints.{ThreadedTransactionalGraph, TransactionalGraph, Direction, Vertex}
-import crawler.{Url, UrlStatus, Relation, Transformers}
+import com.tinkerpop.blueprints.Vertex
+import crawler.{Url, Relation}
 import java.util.UUID
 import scala.Some
 import scala.collection.JavaConversions._

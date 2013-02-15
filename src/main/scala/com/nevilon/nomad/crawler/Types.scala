@@ -1,7 +1,6 @@
 package com.nevilon.nomad.crawler
 
 import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
-import com.nevilon.nomad.filter.Action
 
 /**
  * Created with IntelliJ IDEA.

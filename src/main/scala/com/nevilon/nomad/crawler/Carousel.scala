@@ -1,7 +1,6 @@
 package com.nevilon.nomad.crawler
 
 import com.nevilon.nomad.logs.Logs
-import collection.mutable.ListBuffer
 import concurrent._
 import scala.util.Try
 import scala.Some

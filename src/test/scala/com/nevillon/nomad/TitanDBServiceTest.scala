@@ -1,10 +1,5 @@
 package com.nevillon.nomad
 
-import org.junit.{Assert, Test}
-import com.nevilon.nomad.storage.graph.TitanDBService
-import collection.mutable.ListBuffer
-import com.tinkerpop.blueprints.Direction
-import com.nevilon.nomad.filter.Action
 
 /**
  * Created with IntelliJ IDEA.

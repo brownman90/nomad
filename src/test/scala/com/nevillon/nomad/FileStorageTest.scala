@@ -1,8 +1,7 @@
 package com.nevillon.nomad
 
-import org.junit.{Assert, Test}
+import org.junit.Test
 import com.nevilon.nomad.storage.graph.FileStorage
-import com.nevilon.nomad.devtools.Prototypes
 
 /**
  * Created with IntelliJ IDEA.

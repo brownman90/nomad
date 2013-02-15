@@ -2,7 +2,6 @@ package com.nevilon.nomad.crawler
 
 import java.net.URI
 import org.apache.log4j.LogManager
-import com.nevilon.nomad.filter.Action
 import org.apache.commons.httpclient.util.URIUtil
 
 /**

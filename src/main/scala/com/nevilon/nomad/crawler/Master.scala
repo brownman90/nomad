@@ -1,28 +1,9 @@
 package com.nevilon.nomad.crawler
 
-import collection.mutable.{ArrayBuffer, ListBuffer}
-import concurrent._
-import org.apache.http.client.HttpClient
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.protocol.BasicHttpContext
-import org.apache.http.{HttpEntity, HttpResponse}
-import org.apache.http.util.EntityUtils
-import scala.util.Success
-import org.apache.log4j.LogManager
+import collection.mutable.ArrayBuffer
 import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
-import com.nevilon.nomad.filter.{Action, FilterProcessor, FilterProcessorFactory}
-import javax.activation.MimeType
-import java.io.{ByteArrayInputStream, File, FileOutputStream, InputStream}
-import org.apache.commons.io.FileUtils
-import org.apache.http.client.utils.URLEncodedUtils
-import org.apache.commons.httpclient.util.URIUtil
-import annotation.target
-import org.specs2.internal.scalaz.concurrent.Actor
-import java.util.{Timer, TimerTask}
-import com.nevilon.nomad.logs.{Logs, Tabulator, Statistics, CounterGroup}
-import java.util
+import com.nevilon.nomad.logs.Logs
 import collection.mutable
-import EDU.oswego.cs.dl.util.concurrent.SyncSet
 
 /**
  * Created with IntelliJ IDEA.

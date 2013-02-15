@@ -1,9 +1,6 @@
 package com.nevilon.nomad.filter
 
 import collection.mutable.ListBuffer
-import java.net.URL
-import crawlercommons.robots.{RobotUtils, SimpleRobotRulesParser}
-import crawlercommons.fetcher.UserAgent
 import com.nevilon.nomad.crawler.EntityParams
 
 /**
