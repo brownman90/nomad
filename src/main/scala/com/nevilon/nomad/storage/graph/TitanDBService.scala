@@ -5,7 +5,7 @@ import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import scala.Predef._
 import com.nevilon.nomad._
-import com.tinkerpop.blueprints.{TransactionalGraph, Direction, Vertex}
+import com.tinkerpop.blueprints.{ThreadedTransactionalGraph, TransactionalGraph, Direction, Vertex}
 import crawler.{Url, UrlStatus, Relation, Transformers}
 import filter.Action
 import java.util.UUID
@@ -25,8 +25,77 @@ import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
  * Date: 1/18/13
  * Time: 3:49 AM
  */
-class
-TitanDBService(recreateDb: Boolean) {
+
+trait GraphStorage {
+
+  def getGraph(): TitanGraph
+
+  def shutdown()
+
+}
+
+class CassandraGraphStorage extends GraphStorage {
+
+  private val graph = {
+    val conf: Configuration = new BaseConfiguration
+    conf.setProperty("storage.backend", "cassandra")
+    conf.setProperty("storage.hostname", "127.0.0.1")
+    val graph = TitanFactory.open(conf)
+    graph.createKeyIndex("location", classOf[Vertex])
+    graph.stopTransaction(Conclusion.SUCCESS)
+    graph
+  }
+
+  def getGraph() = graph
+
+  def shutdown() {
+    graph.shutdown()
+  }
+}
+
+
+class BerkeleyGraphStorage extends GraphStorage {
+
+  private val graph = {
+
+    val path: String = "/tmp/berk/"
+    val conf: Configuration = new BaseConfiguration
+
+    conf.setProperty("storage.directory", path)
+    conf.setProperty("buffer-size", "1000")
+    conf.setProperty("storage.backend", "berkeleyje")
+    conf.setProperty("ids.flush", "true")
+    conf.setProperty("storage.cache-percentage", 1)
+    conf.setProperty("storage.transactions", "false")
+
+    val graph = TitanFactory.open(conf)
+    graph.createKeyIndex("location", classOf[Vertex])
+    graph.stopTransaction(Conclusion.SUCCESS)
+    graph
+  }
+
+  def getGraph() = graph
+
+  def shutdown() {
+    graph.shutdown()
+  }
+
+}
+
+class InMemoryGraphStorage extends GraphStorage {
+
+  private val graph = TitanFactory.openInMemoryGraph()
+
+  def getGraph() = graph
+
+  def shutdown() {
+    graph.shutdown()
+  }
+
+}
+
+
+class TitanDBService(recreateDb: Boolean) {
 
   private var graph: TitanGraph = null
 
@@ -40,51 +109,13 @@ TitanDBService(recreateDb: Boolean) {
 
   private def connect() {
     synchronized {
-      /*
-      val path: String = "/tmp/berk/"
-      val dbDir: File = new File(path)
-      //drop db
-      if (recreateDb && dbDir.exists()) {
-        FileUtils.deleteDirectory(dbDir)
-      }
-      var wasCreated = false
-      if (!dbDir.exists) {
-        dbDir.mkdir
-        wasCreated = true
-      }
-      */
       val conf: Configuration = new BaseConfiguration
       conf.setProperty("storage.backend", "cassandra")
       conf.setProperty("storage.hostname", "127.0.0.1")
-      // conf.setProperty("ids.flush", "true")
-      //   conf.setProperty("buffer-size", "100")
-
-      /*
-        conf.setProperty("storage.directory", path)
-      //  conf.setProperty("buffer-size", "1000")
-        conf.setProperty("storage.backend", "berkeleyje")
-        conf.setProperty("ids.flush", "true")
-        conf.setProperty("storage.cache-percentage",1)
-        conf.setProperty("storage.transactions","false")
-        */
-
-      // conf.setProperty("storage.transactions",true)
-      //  graph = TitanFactory.openInMemoryGraph() //open(conf)
 
       graph = TitanFactory.open(conf)
-      //if (wasCreated) {
-     // val x = graph.getIndexedKeys(classOf[Vertex])
-     // println(x)
-
       graph.createKeyIndex("location", classOf[Vertex])
-      //}
       graph.stopTransaction(Conclusion.SUCCESS)
-    //  graph.startTransaction()
-
-   //   val t = getBFSLinks("http://lenta.ru",5)
-    //  println(t)
-
-
     }
   }
 
@@ -100,15 +131,15 @@ TitanDBService(recreateDb: Boolean) {
           doc
         }
       }
-
     }
-
   }
 
 
   private def getUrl(url: String): Option[Vertex] = {
     synchronized {
+      // val tx = graph.startTransaction()
       val vertices = graph.getVertices("location", url)
+      // tx.stopTransaction(Conclusion.SUCCESS)
       if (vertices.isEmpty) {
         None
       } else {
@@ -118,41 +149,46 @@ TitanDBService(recreateDb: Boolean) {
           Some(vertices.iterator.next())
         }
       }
+
     }
+
+
   }
 
   def linkUrls(relations: List[Relation]) {
     synchronized {
-      val tx = graph.startTransaction()
+      // val tx = graph.startTransaction()
 
       relations.foreach(relation => {
         val parentPage = getOrCreateUrl(relation.from)
         val childPage = getOrCreateUrl(relation.to)
         graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
       })
-      tx.stopTransaction(Conclusion.SUCCESS)
     }
+    graph.stopTransaction(Conclusion.SUCCESS)
+
   }
 
 
   def addOrUpdateUrl(url: Url): Vertex = {
     synchronized {
-      val tx = graph.startTransaction()
+      //val tx = graph.startTransaction()
       val vertex = {
         getUrl(url.location) match {
           case None => {
-            graph.addVertex(UUID.randomUUID().toString)
+            graph.addVertex()
           }
           case Some(v) => v
         }
       }
 
-      vertex.setProperty("status", url.status)
+      vertex.setProperty("status", url.status.toString)
       //  graph.createKeyIndex("location", classOf[Vertex])
 
       vertex.setProperty("location", url.location)
       vertex.setProperty("fileId", url.fileId)
-      tx.stopTransaction(Conclusion.SUCCESS)
+      //  graph.stopTransaction(Conclusion.SUCCESS)
+      // graph.stopTransaction(Conclusion.SUCCESS)
 
       vertex
     }
@@ -188,6 +224,7 @@ TitanDBService(recreateDb: Boolean) {
 
     def traverse(): List[Url] = {
       //verify()
+      val tx = graph.startTransaction()
       val startUrl = Transformers.vertex2Url(startVertex)
       if (startUrl.status == UrlStatus.NEW) {
         urls += startUrl
@@ -209,6 +246,7 @@ TitanDBService(recreateDb: Boolean) {
           }
         })
       }
+      tx.stopTransaction(Conclusion.SUCCESS)
       urls.toList
     }
 

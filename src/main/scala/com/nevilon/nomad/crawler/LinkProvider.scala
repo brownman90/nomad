@@ -24,8 +24,8 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
-  private val BFS_LIMIT = 50
-  private val EXTRACTED_LINKS_LIMIT = 50
+  private val BFS_LIMIT = 3000
+  private val EXTRACTED_LINKS_LIMIT = 20000
 
 
   private val logger = LogManager.getLogger(this.getClass.getName)
@@ -61,7 +61,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
         Some(linksToCrawl.pop())
       }
     } else {
-      if (extractedLinks.length >= 30000) {
+      if (extractedLinks.length >= EXTRACTED_LINKS_LIMIT) {
         flushExtractedLinks()
       }
       Some(linksToCrawl.pop())
@@ -78,7 +78,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
-    val bfsLinks = dbService.getBFSLinks(startUrl, EXTRACTED_LINKS_LIMIT)
+    val bfsLinks = dbService.getBFSLinks(startUrl, BFS_LIMIT)
     logger.info("bfs links loaded: " + bfsLinks.size)
     if (bfsLinks.size>20){
     //  dbService.disconnect()
