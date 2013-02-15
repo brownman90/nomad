@@ -5,6 +5,7 @@ import concurrent._
 import scala.util.Try
 import scala.Some
 import collection.mutable
+import com.nevilon.nomad.ControlState
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,7 +26,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
   def start() {
     this.synchronized {
       var hasData = true
-      while (futures.size < maxThreads && hasData) {
+      while (futures.size < maxThreads && hasData && ControlState.canWork) {
         dataProvider.pop() match {
           case None => {
             hasData = false // exit from loop

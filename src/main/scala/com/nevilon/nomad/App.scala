@@ -12,7 +12,7 @@ import crawler.Master
 object App {
 
   def main(args: Array[String]) {
-    val seedsPath =  args(0)
+    val seedsPath = args(0)
     val seedReader = new SeedReader(seedsPath)
 
     val master = new Master(seedReader.getSeeds)
@@ -20,5 +20,18 @@ object App {
     Thread.sleep(10000000)
   }
 
+
+}
+
+
+object ControlState {
+
+  private var canWorkFlag = true
+
+  def setCanWork(canWork: Boolean) {
+    this.canWorkFlag = canWork
+  }
+
+  def canWork = canWorkFlag
 
 }

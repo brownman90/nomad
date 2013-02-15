@@ -18,7 +18,7 @@ import logs.{Logs, Statistics}
 
 class Worker(val startUrl: String, val maxThreads: Int,
              httpClient: HttpClient, dbService: TitanDBService,
-              onCrawlingComplete:(Worker)=>Unit, fileStorage:FileStorage) extends Logs {
+             onCrawlingComplete: (Worker) => Unit, fileStorage: FileStorage) extends Logs {
 
   private val contentSaver = new ContentSaver(fileStorage)
   private val linkProvider = new LinkProvider(startUrl, dbService)
@@ -30,7 +30,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
   private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))
   carousel.setOnBeforeStart((url: Url) => (dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
-  carousel.setOnCrawlingComplete(()=>this)
+  carousel.setOnCrawlingComplete(() => onCrawlingComplete(this))
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
 
@@ -41,7 +41,6 @@ class Worker(val startUrl: String, val maxThreads: Int,
   private val httpErrorCounter = counterGroup.createCounter("http errors")
 
 
-
   def stop() {}
 
   def begin() {
@@ -50,9 +49,9 @@ class Worker(val startUrl: String, val maxThreads: Int,
   }
 
 
-  private def loadAndProcess( url2: Url) {
+  private def loadAndProcess(url2: Url) {
     crawledCounter.inc()
-    val url =   url2.updateStatus(UrlStatus.IN_PROGRESS)
+    val url = url2.updateStatus(UrlStatus.IN_PROGRESS)
     dbService.saveOrUpdateUrl(url)
 
     val fetcher = new Fetcher(url, httpClient)
