@@ -24,8 +24,8 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
-  private val BFS_LIMIT = 3000
-  private val EXTRACTED_LINKS_LIMIT = 20000
+  private val BFS_LIMIT = 30000
+  private val EXTRACTED_LINKS_LIMIT = 5000000
 
 
   private val logger = LogManager.getLogger(this.getClass.getName)

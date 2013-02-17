@@ -19,7 +19,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   seeds.foreach(item => seedsQueue += item)
 
   private val MAX_THREADS = 10
-  private val NUM_OF_WORKERS = 4
+  private val NUM_OF_WORKERS = 5
 
   private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_WORKERS, MAX_THREADS)
   private val dbService = new TitanDBService(true)

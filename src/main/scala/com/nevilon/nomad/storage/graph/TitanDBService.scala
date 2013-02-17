@@ -19,7 +19,7 @@ import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
 
 class TitanDBService(recreateDb: Boolean) {
 
-  private val connector = new BerkeleyGraphStorageConnector
+  private val connector = new CassandraGraphStorageConnector
   private val graph = connector.getGraph
 
   def shutdown() {

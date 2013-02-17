@@ -38,7 +38,7 @@ class BFSTraverser(val startVertex: Vertex, val limit: Int) {
       urls += startUrl
     }
     queue += startVertex
-    val depthLimit = 10 //TODO implement usage!!!
+    val depthLimit = 50 //TODO implement usage!!!
     while (queue.size > 0 && urls.size < limit) {
       val currentVertex = queue.front
       queue = queue.tail
