@@ -21,16 +21,19 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
   private var onBeforeStart: (Url) => Unit = null
   private var onCrawlingComplete: () => Unit = null
 
-  def stop() {}
+ // def stop() {}
 
   def start() {
-    this.synchronized {
+   synchronized {
       var hasData = true
       while (futures.size < maxThreads && hasData && ControlState.canWork) {
         dataProvider.pop() match {
           case None => {
             hasData = false // exit from loop
             info("sorry, no links to crawl ")
+            if (futures.isEmpty) {
+              onCrawlingComplete()
+            }
           }
           case Some(url) => {
             onBeforeStart(url)
@@ -50,9 +53,8 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
     }
     thisFuture.onComplete((data: Try[Unit]) => ({
       futures -= thisFuture
-      if (futures.isEmpty) {
-        onCrawlingComplete()
-      }
+      start()
+
     }))
     thisFuture
   }

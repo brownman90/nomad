@@ -39,20 +39,22 @@ class BFSTraverser(val startVertex: Vertex, val limit: Int) {
     }
     queue += startVertex
     val depthLimit = 50 //TODO implement usage!!!
+
     while (queue.size > 0 && urls.size < limit) {
       val currentVertex = queue.front
       queue = queue.tail
       currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
         if (!(closedSet contains (v))) {
-          closedSet += v
+          // closedSet += v
           val url = Transformers.vertex2Url(v)
           if (url.status == UrlStatus.NEW) {
-            urls += url
+            urls += url //duplicates?
           } else if (url.status == UrlStatus.COMPLETE) {
             queue += v
           }
         }
       })
+      closedSet += currentVertex
     }
     // tx.stopTransaction(Conclusion.SUCCESS)
     urls.toList

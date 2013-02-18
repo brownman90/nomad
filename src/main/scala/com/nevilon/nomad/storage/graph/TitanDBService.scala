@@ -30,7 +30,7 @@ class TitanDBService(recreateDb: Boolean) {
 
 
   private def getUrl(url: String): Option[Vertex] = {
-    synchronized {
+   // synchronized {
       val vertices = graph.getVertices("location", url)
       if (vertices.isEmpty) {
         None
@@ -41,7 +41,7 @@ class TitanDBService(recreateDb: Boolean) {
           Some(vertices.iterator.next())
         }
       }
-    }
+  //  }
   }
 
   def linkUrls(relations: List[Relation]) {
@@ -62,16 +62,21 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
 
-   def saveOrUpdateUrl(url: Url): Vertex = {
+  def saveOrUpdateUrl(url: Url): Vertex = {
     synchronized {
+
       val vertex = {
         getUrl(url.location) match {
           case None => {
+
             graph.addVertex()
           }
-          case Some(v) => v
+          case Some(v) => {
+            v
+          }
         }
       }
+
       vertex.setProperty("status", url.status.toString)
       vertex.setProperty("location", url.location)
       vertex.setProperty("fileId", url.fileId)
@@ -81,11 +86,11 @@ class TitanDBService(recreateDb: Boolean) {
 
 
   def getBFSLinks(url: String, limit: Int): List[Url] = {
-    synchronized {
+   // synchronized {
       val rootVertex = getUrl(url).get
       val traverser = new BFSTraverser(rootVertex, limit)
       traverser.traverse()
-    }
+ //   }
   }
 
 

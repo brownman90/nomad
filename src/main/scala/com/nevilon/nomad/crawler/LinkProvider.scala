@@ -24,8 +24,8 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
-  private val BFS_LIMIT = 30000
-  private val EXTRACTED_LINKS_LIMIT = 5000000
+  private val BFS_LIMIT = 5000
+  private val EXTRACTED_LINKS_LIMIT = 100000
 
 
   private val logger = LogManager.getLogger(this.getClass.getName)
@@ -46,12 +46,16 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   }
 
   def addToExtractedLinks(linkRelation: Relation) {
-    extractedLinks += linkRelation
+    synchronized {
+      extractedLinks += linkRelation
+    }
   }
 
-  def urlToCrawl(): Option[Url] = {
-    if (linksToCrawl.size == 0) {
+  private def urlToCrawl(): Option[Url] = {
+    if (extractedLinks.length >= EXTRACTED_LINKS_LIMIT || linksToCrawl.size == 0) {
       flushExtractedLinks()
+    }
+    if (linksToCrawl.size == 0) {
       val links = loadLinksForCrawling(domain)
       if (links.size == 0) {
         None
@@ -61,33 +65,27 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
         Some(linksToCrawl.pop())
       }
     } else {
-      if (extractedLinks.length >= EXTRACTED_LINKS_LIMIT) {
-        flushExtractedLinks()
-      }
       Some(linksToCrawl.pop())
     }
   }
 
 
-  def flushExtractedLinks() {
-    this.synchronized {
-      dbService.linkUrls(extractedLinks.toList)
-      logger.info("flushed: " + extractedLinks.length + " link(s)")
-      extractedLinks.clear()
-    }
+  private def flushExtractedLinks() {
+    dbService.linkUrls(extractedLinks.toList)
+    logger.info("flushed: " + extractedLinks.length + " link(s)")
+    extractedLinks.clear()
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
     val bfsLinks = dbService.getBFSLinks(startUrl, BFS_LIMIT)
     logger.info("bfs links loaded: " + bfsLinks.size)
-    if (bfsLinks.size>20){
-    //  dbService.shutdown()
-    }
     bfsLinks.toList
-
   }
 
   def pop(): Option[Url] = {
-    urlToCrawl()
+    synchronized {
+      urlToCrawl()
+    }
+
   }
 }

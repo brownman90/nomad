@@ -7,7 +7,7 @@ import collection.mutable
 import com.nevilon.nomad.ControlState
 
 /**
- * Created with IntelliJ IDEA.
+ * Created with IntelliJ  IDEA.
  * User: hudvin
  * Date: 1/14/13
  * Time: 7:51 AM
@@ -21,7 +21,6 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private val MAX_THREADS = 10
   private val NUM_OF_WORKERS = 5
 
-  private val httpClient = HttpClientFactory.buildHttpClient(MAX_THREADS * NUM_OF_WORKERS, MAX_THREADS)
   private val dbService = new TitanDBService(true)
   private val workers = new ArrayBuffer[Worker]
 
@@ -36,15 +35,14 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private def loadWatchers() {
     while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS && ControlState.canWork) {
       val worker: Worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
-        httpClient, dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
+         dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
       worker.begin()
       workers += worker
     }
-   // ControlState.setCanWork(canWork = false)
   }
 
   private def shutdown() {
-    httpClient.getConnectionManager.shutdown()
+   // httpClient.getConnectionManager.shutdown()
   }
 
   private def onCrawlingComplete(worker: Worker) {

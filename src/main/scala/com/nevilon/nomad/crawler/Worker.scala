@@ -17,7 +17,7 @@ import logs.{Logs, Statistics}
  */
 
 class Worker(val startUrl: String, val maxThreads: Int,
-             httpClient: HttpClient, dbService: TitanDBService,
+             dbService: TitanDBService,
              onCrawlingComplete: (Worker) => Unit, fileStorage: FileStorage) extends Logs {
 
   private val contentSaver = new ContentSaver(fileStorage)
@@ -29,8 +29,13 @@ class Worker(val startUrl: String, val maxThreads: Int,
 
   private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))
-  carousel.setOnBeforeStart((url: Url) => (dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))))
-  carousel.setOnCrawlingComplete(() => onCrawlingComplete(this))
+  carousel.setOnBeforeStart((url: Url) => {
+    (dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS)))
+  })
+  carousel.setOnCrawlingComplete(() => {
+    httpClient.getConnectionManager.shutdown()
+    onCrawlingComplete(this)
+  })
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
 
@@ -40,6 +45,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
   private val errorCounter = counterGroup.createCounter("errors")
   private val httpErrorCounter = counterGroup.createCounter("http errors")
 
+  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads)
 
   def stop() {}
 
@@ -67,7 +73,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
     })
 
     fetcher.onFinish(() => {
-      carousel.start()
+//      carousel.start()
     })
 
     fetcher.onDataStream((entityParams: EntityParams, entity: HttpEntity, url: Url) => {
