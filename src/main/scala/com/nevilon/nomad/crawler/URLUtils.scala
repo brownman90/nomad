@@ -35,7 +35,6 @@ object URLUtils {
     //NPE on urls like http://правительство.рф/gov/results/22601
     val uri = new URI(url.toLowerCase)
     val domain = uri.getHost
-    //println(url)
     if (domain.startsWith("www.")) {
       domain.substring(4)
     } else {

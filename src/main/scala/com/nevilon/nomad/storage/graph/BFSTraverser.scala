@@ -15,7 +15,7 @@ import scala.collection.JavaConversions._
 
 class BFSTraverser(val startVertex: Vertex, val limit: Int) {
 
-  private val closedSet = new mutable.HashSet[Vertex]
+  private val closedSet = new mutable.HashSet[String]
   private var queue = new mutable.Queue[Vertex]
   private val urls = new mutable.Queue[Url]
 
@@ -44,19 +44,21 @@ class BFSTraverser(val startVertex: Vertex, val limit: Int) {
       val currentVertex = queue.front
       queue = queue.tail
       currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
-        if (!(closedSet contains (v))) {
+        val url = Transformers.vertex2Url(v)
+        if (!(closedSet contains (url.location))) {
           // closedSet += v
-          val url = Transformers.vertex2Url(v)
-          if (url.status == UrlStatus.NEW) {
+          if (url.status == UrlStatus.NEW || !urls.contains(url)) {
             urls += url //duplicates?
           } else if (url.status == UrlStatus.COMPLETE) {
             queue += v
           }
         }
+
       })
-      closedSet += currentVertex
+      closedSet += Transformers.vertex2Url(currentVertex).location
     }
     // tx.stopTransaction(Conclusion.SUCCESS)
+    //require(urls.toList.size == urls.toList.distinct.size)
     urls.toList
   }
 
