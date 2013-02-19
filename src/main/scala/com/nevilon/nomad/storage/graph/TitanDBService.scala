@@ -41,20 +41,19 @@ class TitanDBService(recreateDb: Boolean) {
           }
         }
 
-        synchronized {
-          relations.foreach(relation => {
-            val parentPage = getOrCreate(relation.from)
-            val childPage = getOrCreate(relation.to)
-            tx.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
-          })
-        }
+        relations.foreach(relation => {
+          val parentPage = getOrCreate(relation.from)
+          val childPage = getOrCreate(relation.to)
+          tx.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
+        })
+
       }
     }
   }
 
 
-  def saveOrUpdateUrl(url: Url): Vertex = {
-    withTransaction[Vertex] {
+  def saveOrUpdateUrl(url: Url) = {
+    withTransaction {
       implicit tx => {
         saveOrUpdateUrlInTx(url)
       }
@@ -82,6 +81,7 @@ class TitanDBService(recreateDb: Boolean) {
     vertex.setProperty("status", url.status.toString)
     vertex.setProperty("location", url.location)
     vertex.setProperty("fileId", url.fileId)
+
     vertex
   }
 
@@ -91,6 +91,7 @@ class TitanDBService(recreateDb: Boolean) {
     else if (vertices.size > 1)
       throw new RuntimeException("There are more than one page with this url!")
     else Some(vertices.iterator.next())
+
   }
 
 

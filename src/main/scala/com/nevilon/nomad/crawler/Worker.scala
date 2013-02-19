@@ -61,11 +61,6 @@ class Worker(val startUrl: String, val maxThreads: Int,
     //flush links
   }
 
-  def begin() {
-   // linkProvider.findOrCreateUrl(startUrl)
-    //carousel.start()
-  }
-
 
   private def loadAndProcess(url2: Url) {
     crawledCounter.inc()
@@ -156,14 +151,12 @@ class Worker(val startUrl: String, val maxThreads: Int,
   }
 
   private def onProcessingComplete(extractedData: ExtractedData, url: Url) {
-    synchronized {
-      dbService.saveOrUpdateUrl(
-        url.
-          updateStatus(UrlStatus.COMPLETE).
-          updateFileId(extractedData.fetchedContent.gfsId)
-      )
-      extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
-    }
+    dbService.saveOrUpdateUrl(
+      url.
+        updateStatus(UrlStatus.COMPLETE).
+        updateFileId(extractedData.fetchedContent.gfsId)
+    )
+    extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
   }
 
 

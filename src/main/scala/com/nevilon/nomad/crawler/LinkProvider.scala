@@ -25,7 +25,7 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
   private val BFS_LIMIT = 5000
-  private val EXTRACTED_LINKS_LIMIT = 100000
+  private val EXTRACTED_LINKS_LIMIT = 1000000
 
 
   private val logger = LogManager.getLogger(this.getClass.getName)
@@ -46,9 +46,9 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   }
 
   def addToExtractedLinks(linkRelation: Relation) {
-    synchronized {
+   // synchronized {
       extractedLinks += linkRelation
-    }
+ //   }
   }
 
   private def urlToCrawl(): Option[Url] = {
@@ -71,11 +71,11 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
 
 
   def flushExtractedLinks() {
-    synchronized {
+  //  synchronized {
       dbService.linkUrls(extractedLinks.toList)
       logger.info("flushed: " + extractedLinks.length + " link(s)")
       extractedLinks.clear()
-    }
+  //  }
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {

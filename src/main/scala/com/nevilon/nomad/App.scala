@@ -17,7 +17,7 @@ object App {
     val seedReader = new SeedReader(seedsPath)
 
     val master = new Master(seedReader.getSeeds)
-    sys.ShutdownHookThread {
+    /*sys.ShutdownHookThread {
       master.stop()
       while (!master.isComplete) {
         println("waiting for completion")
@@ -26,6 +26,8 @@ object App {
 
       println("exiting !!!!!!!!!!!!!!!!!")
     }
+*/
+
 
     master.startCrawling()
     Thread.sleep(10000000)

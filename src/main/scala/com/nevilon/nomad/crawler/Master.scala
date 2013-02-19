@@ -35,7 +35,6 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
     while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) { // add flag for stop
       val worker: Worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
          dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
-      worker.begin()
       workers += worker
       println("added " +worker.startUrl)
     }
