@@ -5,7 +5,6 @@ import concurrent._
 import scala.util.Try
 import scala.Some
 import collection.mutable
-import com.nevilon.nomad.ControlState
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,29 +20,90 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
   private var onBeforeStart: (Url) => Unit = null
   private var onCrawlingComplete: () => Unit = null
 
- // def stop() {}
+  private var canWork = true
 
+  private val sync = new Object
+
+  private val t = new Thread() {
+
+    override def run() {
+      var flag = true
+
+      sync.synchronized {
+
+        while (flag) {
+
+          if (canWork) {
+            var hasData = true
+            while (futures.size < maxThreads && hasData) {
+              dataProvider.pop() match {
+                case None => {
+                  hasData = false // exit from loop
+                  info("sorry, no links to crawl ")
+                  if (futures.isEmpty) {
+                    onCrawlingComplete()
+                  }
+                }
+                case Some(url) => {
+                  onBeforeStart(url)
+                  futures += buildFuture(url)
+                  info("starting future for crawling " + url.location)
+                }
+              }
+            }
+            sync.wait()
+          } else if (futures.isEmpty) {
+            println("COMPLETE CAR!")
+            onCrawlingComplete()
+            println("########################################################")
+            flag = false
+          }else{
+            sync.wait()
+          }
+         // sync.wait()
+        }
+      }
+
+    }
+
+  }
+
+  t.start()
+
+  def stop() {
+    println("canWOrk === false")
+    canWork = false
+  }
+
+  /*
   def start() {
-   synchronized {
-      var hasData = true
-      while (futures.size < maxThreads && hasData && ControlState.canWork) {
-        dataProvider.pop() match {
-          case None => {
-            hasData = false // exit from loop
-            info("sorry, no links to crawl ")
-            if (futures.isEmpty) {
-              onCrawlingComplete()
+    synchronized {
+      if (canWork) {
+        var hasData = true
+        while (futures.size < maxThreads && hasData) {
+          dataProvider.pop() match {
+            case None => {
+              hasData = false // exit from loop
+              info("sorry, no links to crawl ")
+              if (futures.isEmpty) {
+                onCrawlingComplete()
+              }
+            }
+            case Some(url) => {
+              onBeforeStart(url)
+              futures += buildFuture(url)
+              info("starting future for crawling " + url.location)
             }
           }
-          case Some(url) => {
-            onBeforeStart(url)
-            futures += buildFuture(url)
-            info("starting future for crawling " + url.location)
-          }
+        }
+      } else {
+        if (futures.isEmpty) {
+          onCrawlingComplete()
         }
       }
     }
   }
+  */
 
 
   private def buildFuture(url: Url): Future[Unit] = {
@@ -53,7 +113,10 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
     }
     thisFuture.onComplete((data: Try[Unit]) => ({
       futures -= thisFuture
-      start()
+      sync.synchronized {
+        sync.notify()
+      }
+      //start()
 
     }))
     thisFuture

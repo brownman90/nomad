@@ -9,7 +9,13 @@ apply plugin: 'idea'
 apply plugin: 'idea-scala'
 
 
+mainClassName = "com.nevilon.nomad.App"
 
+run{
+
+args '/home/hudvin/projects/nomad/seed.txt'
+
+}
 
 buildscript {
     repositories {

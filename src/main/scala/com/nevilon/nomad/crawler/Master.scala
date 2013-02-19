@@ -4,7 +4,6 @@ import collection.mutable.ArrayBuffer
 import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
 import com.nevilon.nomad.logs.Logs
 import collection.mutable
-import com.nevilon.nomad.ControlState
 
 /**
  * Created with IntelliJ  IDEA.
@@ -33,16 +32,25 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   }
 
   private def loadWatchers() {
-    while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS && ControlState.canWork) {
+    while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) { // add flag for stop
       val worker: Worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
          dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
       worker.begin()
       workers += worker
+      println("added " +worker.startUrl)
     }
   }
 
-  private def shutdown() {
-   // httpClient.getConnectionManager.shutdown()
+
+  def isComplete:Boolean = {
+    println("kingsize " + workers.size)
+    workers.foreach(w=>println(w.startUrl))
+    workers.isEmpty
+  }
+
+  def stop(){
+    println("send stop command "+ workers.size)
+    workers.foreach(w=>w.stop())
   }
 
   private def onCrawlingComplete(worker: Worker) {
@@ -50,7 +58,6 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
     workers -= worker
     if (workers.isEmpty) {
       stopPrinting()
-      shutdown()
     }
   }
 

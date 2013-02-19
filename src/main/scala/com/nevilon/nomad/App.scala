@@ -2,6 +2,7 @@ package com.nevilon.nomad
 
 import boot.SeedReader
 import crawler.Master
+import java.lang.Shutdown
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,6 +17,16 @@ object App {
     val seedReader = new SeedReader(seedsPath)
 
     val master = new Master(seedReader.getSeeds)
+    sys.ShutdownHookThread {
+      master.stop()
+      while (!master.isComplete) {
+        println("waiting for completion")
+        Thread.sleep(5000)
+      }
+
+      println("exiting !!!!!!!!!!!!!!!!!")
+    }
+
     master.startCrawling()
     Thread.sleep(10000000)
   }
@@ -24,14 +35,4 @@ object App {
 }
 
 
-object ControlState {
 
-  private var canWorkFlag = true
-
-  def setCanWork(canWork: Boolean) {
-    this.canWorkFlag = canWork
-  }
-
-  def canWork = canWorkFlag
-
-}

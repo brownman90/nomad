@@ -22,20 +22,12 @@ class Worker(val startUrl: String, val maxThreads: Int,
 
   private val contentSaver = new ContentSaver(fileStorage)
   private val linkProvider = new LinkProvider(startUrl, dbService)
+  linkProvider.findOrCreateUrl(startUrl)
   private val pageDataExtractor = new PageDataExtractor
 
   private val domain = URLUtils.normalize(URLUtils.getDomainName(startUrl))
   private val filterProcessor = FilterProcessorFactory.get(domain)
 
-  private val carousel = new Carousel(maxThreads, linkProvider)
-  carousel.setOnStart((url: Url) => loadAndProcess(url))
-  carousel.setOnBeforeStart((url: Url) => {
-    (dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS)))
-  })
-  carousel.setOnCrawlingComplete(() => {
-    httpClient.getConnectionManager.shutdown()
-    onCrawlingComplete(this)
-  })
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
 
@@ -47,11 +39,31 @@ class Worker(val startUrl: String, val maxThreads: Int,
 
   private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads)
 
-  def stop() {}
+  private val carousel = new Carousel(maxThreads, linkProvider)
+  carousel.setOnStart((url: Url) => loadAndProcess(url))
+  carousel.setOnBeforeStart((url: Url) => {
+    (dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS)))
+  })
+
+  carousel.setOnCrawlingComplete(() => {
+    println("worker - c complete")
+    httpClient.getConnectionManager.shutdown()
+    linkProvider.flushExtractedLinks()
+    onCrawlingComplete(this)
+    //flush links
+  })
+
+
+  def stop() {
+    //stop carousel
+    println("stop me - carousel " + startUrl)
+    carousel.stop()
+    //flush links
+  }
 
   def begin() {
-    linkProvider.findOrCreateUrl(startUrl)
-    carousel.start()
+   // linkProvider.findOrCreateUrl(startUrl)
+    //carousel.start()
   }
 
 
@@ -63,7 +75,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {
       dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))
-      info("error during crawling " + url, e)
+      info("error during crawling " + url.location, e)
       errorCounter.inc()
     })
     fetcher.onHttpError((code: Int) => {
@@ -73,7 +85,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
     })
 
     fetcher.onFinish(() => {
-//      carousel.start()
+      //      carousel.start()
     })
 
     fetcher.onDataStream((entityParams: EntityParams, entity: HttpEntity, url: Url) => {

@@ -70,10 +70,12 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   }
 
 
-  private def flushExtractedLinks() {
-    dbService.linkUrls(extractedLinks.toList)
-    logger.info("flushed: " + extractedLinks.length + " link(s)")
-    extractedLinks.clear()
+  def flushExtractedLinks() {
+    synchronized {
+      dbService.linkUrls(extractedLinks.toList)
+      logger.info("flushed: " + extractedLinks.length + " link(s)")
+      extractedLinks.clear()
+    }
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {

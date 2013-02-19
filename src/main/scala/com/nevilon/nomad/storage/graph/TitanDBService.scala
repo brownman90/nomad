@@ -8,6 +8,7 @@ import java.util.UUID
 import scala.Some
 import scala.collection.JavaConversions._
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
+import com.thinkaurelius.titan.core.{TitanTransaction, TitanGraph}
 
 /**
  * Created with IntelliJ IDEA.
@@ -29,9 +30,9 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
 
-  private def getUrl(url: String): Option[Vertex] = {
+  private def getUrl(url: String, graph2:TitanTransaction): Option[Vertex] = {
    // synchronized {
-      val vertices = graph.getVertices("location", url)
+      val vertices = graph2.getVertices("location", url)
       if (vertices.isEmpty) {
         None
       } else {
@@ -45,31 +46,53 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
   def linkUrls(relations: List[Relation]) {
+    val tx = graph.startTransaction()
+
     def getOrCreate(url: Url): Vertex = {
-      getUrl(url.location) match {
+      getUrl(url.location,tx) match {
         case Some(v) => v
-        case None => saveOrUpdateUrl(url)
+        case None => saveOrUpdateOnGraph(url,tx)
       }
     }
+
     synchronized {
       relations.foreach(relation => {
         val parentPage = getOrCreate(relation.from)
         val childPage = getOrCreate(relation.to)
-        graph.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
+        tx.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
       })
     }
-    graph.stopTransaction(Conclusion.SUCCESS)
+    tx.stopTransaction(Conclusion.SUCCESS)
   }
 
 
+  private def saveOrUpdateOnGraph(url:Url, graph:TitanTransaction):Vertex = {
+    val vertex = {
+      getUrl(url.location,graph) match {
+        case None => {
+
+          graph.addVertex()
+        }
+        case Some(v) => {
+          v
+        }
+      }
+    }
+
+    vertex.setProperty("status", url.status.toString)
+    vertex.setProperty("location", url.location)
+    vertex.setProperty("fileId", url.fileId)
+    vertex
+  }
+
   def saveOrUpdateUrl(url: Url): Vertex = {
     synchronized {
-
+      val tx = graph.startTransaction()
       val vertex = {
-        getUrl(url.location) match {
+        getUrl(url.location,tx) match {
           case None => {
 
-            graph.addVertex()
+            tx.addVertex()
           }
           case Some(v) => {
             v
@@ -80,16 +103,21 @@ class TitanDBService(recreateDb: Boolean) {
       vertex.setProperty("status", url.status.toString)
       vertex.setProperty("location", url.location)
       vertex.setProperty("fileId", url.fileId)
+      tx.stopTransaction(Conclusion.SUCCESS)
       vertex
+
     }
   }
 
 
   def getBFSLinks(url: String, limit: Int): List[Url] = {
    // synchronized {
-      val rootVertex = getUrl(url).get
+   val tx = graph.startTransaction()
+      val rootVertex = getUrl(url,tx).get
       val traverser = new BFSTraverser(rootVertex, limit)
-      traverser.traverse()
+     val list =  traverser.traverse()
+    tx.stopTransaction(Conclusion.SUCCESS)
+    list
  //   }
   }
 
