@@ -1,5 +1,1 @@
-http://linux.org.ru
-http://www.kurzweilai.net/
-http://lenta.ru
-http://www.cs.utexas.edu/
-http://www.csail.mit.edu/
+http://v.bartko.info

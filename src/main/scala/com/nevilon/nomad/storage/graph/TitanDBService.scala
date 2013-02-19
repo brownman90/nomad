@@ -8,7 +8,7 @@ import java.util.UUID
 import scala.Some
 import scala.collection.JavaConversions._
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
-import com.thinkaurelius.titan.core.{TitanTransaction, TitanGraph}
+import com.thinkaurelius.titan.core.{TitanTransaction}
 
 /**
  * Created with IntelliJ IDEA.
@@ -30,52 +30,52 @@ class TitanDBService(recreateDb: Boolean) {
   }
 
 
-  private def getUrl(url: String, graph2:TitanTransaction): Option[Vertex] = {
-   // synchronized {
-      val vertices = graph2.getVertices("location", url)
-      if (vertices.isEmpty) {
-        None
-      } else {
-        if (vertices.size > 1) {
-          throw new RuntimeException("There are more than one page with this url!")
-        } else {
-          Some(vertices.iterator.next())
-        }
-      }
-  //  }
-  }
-
   def linkUrls(relations: List[Relation]) {
-    val tx = graph.startTransaction()
+    withTransaction {
+      implicit tx => {
 
-    def getOrCreate(url: Url): Vertex = {
-      getUrl(url.location,tx) match {
-        case Some(v) => v
-        case None => saveOrUpdateOnGraph(url,tx)
+        def getOrCreate(url: Url): Vertex = {
+          getUrl(url.location) match {
+            case Some(v) => v
+            case None => saveOrUpdateUrlInTx(url)
+          }
+        }
+
+        synchronized {
+          relations.foreach(relation => {
+            val parentPage = getOrCreate(relation.from)
+            val childPage = getOrCreate(relation.to)
+            tx.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
+          })
+        }
       }
     }
-
-    synchronized {
-      relations.foreach(relation => {
-        val parentPage = getOrCreate(relation.from)
-        val childPage = getOrCreate(relation.to)
-        tx.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
-      })
-    }
-    tx.stopTransaction(Conclusion.SUCCESS)
   }
 
 
-  private def saveOrUpdateOnGraph(url:Url, graph:TitanTransaction):Vertex = {
-    val vertex = {
-      getUrl(url.location,graph) match {
-        case None => {
+  def saveOrUpdateUrl(url: Url): Vertex = {
+    withTransaction[Vertex] {
+      implicit tx => {
+        saveOrUpdateUrlInTx(url)
+      }
+    }
+  }
 
-          graph.addVertex()
-        }
-        case Some(v) => {
-          v
-        }
+
+  def getBFSLinks(url: String, limit: Int): List[Url] = {
+    withTransaction[List[Url]] {
+      implicit tx => {
+        val rootVertex = getUrl(url).get
+        new BFSTraverser(rootVertex, limit).traverse()
+      }
+    }
+  }
+
+  private def saveOrUpdateUrlInTx(url: Url)(implicit tx: TitanTransaction): Vertex = {
+    val vertex = {
+      getUrl(url.location) match {
+        case None => tx.addVertex()
+        case Some(v) => v
       }
     }
 
@@ -85,40 +85,25 @@ class TitanDBService(recreateDb: Boolean) {
     vertex
   }
 
-  def saveOrUpdateUrl(url: Url): Vertex = {
-    synchronized {
-      val tx = graph.startTransaction()
-      val vertex = {
-        getUrl(url.location,tx) match {
-          case None => {
-
-            tx.addVertex()
-          }
-          case Some(v) => {
-            v
-          }
-        }
-      }
-
-      vertex.setProperty("status", url.status.toString)
-      vertex.setProperty("location", url.location)
-      vertex.setProperty("fileId", url.fileId)
-      tx.stopTransaction(Conclusion.SUCCESS)
-      vertex
-
-    }
+  private def getUrl(url: String)(implicit tx: TitanTransaction): Option[Vertex] = {
+    val vertices = tx.getVertices("location", url)
+    if (vertices.isEmpty) None
+    else if (vertices.size > 1)
+      throw new RuntimeException("There are more than one page with this url!")
+    else Some(vertices.iterator.next())
   }
 
 
-  def getBFSLinks(url: String, limit: Int): List[Url] = {
-   // synchronized {
-   val tx = graph.startTransaction()
-      val rootVertex = getUrl(url,tx).get
-      val traverser = new BFSTraverser(rootVertex, limit)
-     val list =  traverser.traverse()
-    tx.stopTransaction(Conclusion.SUCCESS)
-    list
- //   }
+  private def withTransaction[T](f: TitanTransaction => T): T = {
+    val tx = graph.startTransaction()
+    try {
+      val result = f(tx)
+      tx.stopTransaction(Conclusion.SUCCESS)
+      result
+    }
+    catch {
+      case ex: Throwable => tx.abort(); throw ex
+    }
   }
 
 
