@@ -4,6 +4,7 @@ import collection.mutable.ListBuffer
 import collection.mutable
 import org.apache.log4j.LogManager
 import com.nevilon.nomad.storage.graph.TitanDBService
+import com.nevilon.nomad.logs.Logs
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,16 +20,14 @@ trait PopProvider {
 
 }
 
-class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvider {
+class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvider with Logs {
 
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
-  private val BFS_LIMIT = 5000
+  private val BFS_LIMIT = 15000
   private val EXTRACTED_LINKS_LIMIT = 1000000
 
-
-  private val logger = LogManager.getLogger(this.getClass.getName)
 
   /*
     url - normalized form
@@ -42,7 +41,12 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
        so here we need just find url in urls table and than check if domain is in white list(domains table)
 
      */
-    dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
+    //do not update if already present!!!
+    dbService.getUrl(url) match {
+      case None=>  dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
+      case Some(v)=> info("url "+ url+ " is already saved")
+    }
+
   }
 
   def addToExtractedLinks(linkRelation: Relation) {
@@ -73,14 +77,14 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   def flushExtractedLinks() {
   //  synchronized {
       dbService.linkUrls(extractedLinks.toList)
-      logger.info("flushed: " + extractedLinks.length + " link(s)")
+      info("flushed: " + extractedLinks.length + " link(s)")
       extractedLinks.clear()
   //  }
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
     val bfsLinks = dbService.getBFSLinks(startUrl, BFS_LIMIT)
-    logger.info("bfs links loaded: " + bfsLinks.size)
+    info("bfs links loaded: " + bfsLinks.size)
     bfsLinks.toList
   }
 

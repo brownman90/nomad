@@ -35,7 +35,7 @@ class TitanDBService(recreateDb: Boolean) {
       implicit tx => {
 
         def getOrCreate(url: Url): Vertex = {
-          getUrl(url.location) match {
+          getUrlInTx(url.location) match {
             case Some(v) => v
             case None => saveOrUpdateUrlInTx(url)
           }
@@ -64,15 +64,22 @@ class TitanDBService(recreateDb: Boolean) {
   def getBFSLinks(url: String, limit: Int): List[Url] = {
     withTransaction[List[Url]] {
       implicit tx => {
-        val rootVertex = getUrl(url).get
+        val rootVertex = getUrlInTx(url).get
         new BFSTraverser(rootVertex, limit).traverse()
       }
     }
   }
 
+  def getUrl(url: String): Option[Vertex] = {
+    withTransaction[Option[Vertex]] {
+      implicit tx =>
+        getUrlInTx(url)
+    }
+  }
+
   private def saveOrUpdateUrlInTx(url: Url)(implicit tx: TitanTransaction): Vertex = {
     val vertex = {
-      getUrl(url.location) match {
+      getUrlInTx(url.location) match {
         case None => tx.addVertex()
         case Some(v) => v
       }
@@ -85,7 +92,7 @@ class TitanDBService(recreateDb: Boolean) {
     vertex
   }
 
-  private def getUrl(url: String)(implicit tx: TitanTransaction): Option[Vertex] = {
+  private def getUrlInTx(url: String)(implicit tx: TitanTransaction): Option[Vertex] = {
     val vertices = tx.getVertices("location", url)
     if (vertices.isEmpty) None
     else if (vertices.size > 1)

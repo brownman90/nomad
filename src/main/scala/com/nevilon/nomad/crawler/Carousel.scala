@@ -73,37 +73,9 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
   def stop() {
     println("canWOrk === false")
     canWork = false
+    t.interrupt()
   }
 
-  /*
-  def start() {
-    synchronized {
-      if (canWork) {
-        var hasData = true
-        while (futures.size < maxThreads && hasData) {
-          dataProvider.pop() match {
-            case None => {
-              hasData = false // exit from loop
-              info("sorry, no links to crawl ")
-              if (futures.isEmpty) {
-                onCrawlingComplete()
-              }
-            }
-            case Some(url) => {
-              onBeforeStart(url)
-              futures += buildFuture(url)
-              info("starting future for crawling " + url.location)
-            }
-          }
-        }
-      } else {
-        if (futures.isEmpty) {
-          onCrawlingComplete()
-        }
-      }
-    }
-  }
-  */
 
 
   private def buildFuture(url: Url): Future[Unit] = {

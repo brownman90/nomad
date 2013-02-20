@@ -36,7 +36,6 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
       val worker: Worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
          dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
       workers += worker
-      println("added " +worker.startUrl)
     }
   }
 

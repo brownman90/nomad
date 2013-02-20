@@ -16,44 +16,35 @@ import scala.collection.JavaConversions._
 class BFSTraverser(val startVertex: Vertex, val limit: Int) {
 
   private val closedSet = new mutable.HashSet[String]
-  private var queue = new mutable.Queue[Vertex]
-  private val urls = new mutable.Queue[Url]
+  private var queue = new mutable.HashSet[Vertex]  // but we need queue for BFS!!!
+  private val urls = new mutable.HashSet[Url]
+
+
+  implicit def Vertex2Url(vertex: Vertex) = Transformers.vertex2Url(vertex)
 
   def traverse(): List[Url] = {
-    val startUrl = Transformers.vertex2Url(startVertex)
-    if (startUrl.status == UrlStatus.NEW) {
-      urls += startUrl
-    }
+    if (startVertex.status == UrlStatus.NEW) urls += startVertex
     queue += startVertex
 
-
     while (queue.size > 0 && urls.size < limit) {
-      val currentVertex = queue.front
-      queue = queue.tail
-      println("queue " + queue.size + " closed set " + closedSet.size +
-        " urls " + urls.size + " " + currentVertex.getProperty("location"))
-
-      currentVertex.getVertices(Direction.OUT, "relation").iterator().foreach(v => {
-        val url = Transformers.vertex2Url(v)
-        if (  !queue.contains(v)  &&  !(closedSet contains (url.location))) {
-
-
-         // println(url.status)
-          if (url.status == UrlStatus.NEW &&  !urls.contains(url)) {
-            urls += url
-          } else if (url.status == UrlStatus.COMPLETE && !urls.contains(url)) {
-          //  println("add to q")
-            queue += v
-          }
+      println(queue.size + " " + closedSet.size + " urls " + urls.size)
+      queue.toList match {
+        case ::(head, tail) => {
+          queue = queue.tail
+          head.getVertices(Direction.OUT, "relation").filter(v => !queue.contains(v) && !(closedSet contains (Transformers.vertex2Url(v).location))
+          ).foreach(v => {
+            val url: Url = v
+            if (url.status == UrlStatus.NEW && !urls.contains(url)) {
+              urls += url
+            } else if (url.status == UrlStatus.COMPLETE && !urls.contains(url)) {
+              queue += v
+            }
+          })
+          //ТОЛЬКО РОДИТЕЛЬСКИЙ УЗЕЛ!!!!
+          closedSet += Transformers.vertex2Url(head).location
         }
-
-      })
-      closedSet += Transformers.vertex2Url(currentVertex).location
+      }
     }
-
-
-
-
     require(urls.toList.size == urls.toList.distinct.size)
     urls.toList
   }
