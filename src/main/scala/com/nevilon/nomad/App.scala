@@ -4,6 +4,7 @@ import boot.SeedReader
 import crawler.Master
 import java.lang.Shutdown
 import logs.Logs
+import com.typesafe.config.ConfigFactory
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,7 +12,7 @@ import logs.Logs
  * Date: 1/23/13
  * Time: 11:35 AM
  */
-object App extends  Logs{
+object App extends Logs {
 
   def main(args: Array[String]) {
     val seedsPath = args(0)
@@ -34,4 +35,5 @@ object App extends  Logs{
 
 
 }
+
 

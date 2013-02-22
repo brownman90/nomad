@@ -4,6 +4,7 @@ import collection.mutable.ArrayBuffer
 import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
 import com.nevilon.nomad.logs.Logs
 import collection.mutable
+import com.nevilon.nomad.boot.GlobalConfig
 
 /**
  * Created with IntelliJ  IDEA.
@@ -17,13 +18,13 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private var seedsQueue = new mutable.SynchronizedQueue[String]
   seeds.foreach(item => seedsQueue += item)
 
-  private val MAX_THREADS = 10
-  private val NUM_OF_WORKERS = 5
+  private val MAX_THREADS = GlobalConfig.masterConfig.threadsInWorker
+  private val NUM_OF_WORKERS = GlobalConfig.masterConfig.workers
 
   private val dbService = new TitanDBService(true)
   private val workers = new ArrayBuffer[Worker]
 
-  private val fileStorage = new FileStorage()
+  private val fileStorage = new FileStorage(GlobalConfig.mongoDBConfig)
 
   def startCrawling() {
     startPrinting()

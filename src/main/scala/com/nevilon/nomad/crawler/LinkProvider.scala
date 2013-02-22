@@ -2,9 +2,9 @@ package com.nevilon.nomad.crawler
 
 import collection.mutable.ListBuffer
 import collection.mutable
-import org.apache.log4j.LogManager
 import com.nevilon.nomad.storage.graph.TitanDBService
 import com.nevilon.nomad.logs.Logs
+import com.nevilon.nomad.boot.GlobalConfig
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,8 +25,8 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
 
-  private val BFS_LIMIT = 15000
-  private val EXTRACTED_LINKS_LIMIT = 1000000
+  private val BFS_LIMIT = GlobalConfig.linksConfig.bfsLimit
+  private val EXTRACTED_LINKS_LIMIT = GlobalConfig.linksConfig.extractedLinksCache
 
 
   /*

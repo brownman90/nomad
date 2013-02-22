@@ -2,13 +2,17 @@ package com.nevilon.nomad.storage.graph
 
 import scala.Predef._
 import com.nevilon.nomad._
+import boot.GlobalConfig
 import com.tinkerpop.blueprints.Vertex
 import crawler.{Url, Relation}
 import java.util.UUID
+import logs.Logs
 import scala.Some
 import scala.collection.JavaConversions._
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
 import com.thinkaurelius.titan.core.{TitanTransaction}
+import java.lang.String
+import scala.Predef.String
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,9 +22,18 @@ import com.thinkaurelius.titan.core.{TitanTransaction}
  */
 
 
-class TitanDBService(recreateDb: Boolean) {
+class TitanDBService(recreateDb: Boolean) extends Logs {
 
-  private val connector = new CassandraGraphStorageConnector
+  private val connector =
+    GlobalConfig.titanConfig.backend match {
+      case "cassandra" => new CassandraGraphStorageConnector(GlobalConfig.cassandraConfig)
+      case "inmemory" => new InMemoryGraphStorageConnector(GlobalConfig.inMemoryConfig)
+      case "berkeley" => new BerkeleyGraphStorageConnector(GlobalConfig.berkeleyConfig)
+      case _ => {
+        error("wrong backend configuration")
+        throw new Error
+      }
+    }
   private val graph = connector.getGraph
 
   def shutdown() {

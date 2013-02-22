@@ -4,6 +4,7 @@ import com.mongodb.casbah.commons.conversions.scala._
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.Imports._
 import java.io.InputStream
+import com.nevilon.nomad.boot.MongoDBConfig
 
 
 /**
@@ -13,15 +14,12 @@ import java.io.InputStream
  * Time: 1:02 PM
  */
 
-class FileStorage {
+class FileStorage(conf:MongoDBConfig) {
   /*
      what about autoclean param on each start?
      check for file existence?
 
    */
-  private val DB_NAME = "nomad"
-  private val DB_HOST = "localhost"
-  private val DB_PORT = 27017
 
   private var mongoClient: MongoClient = null
   private var gridfs: GridFS = null
@@ -32,8 +30,8 @@ class FileStorage {
   connect()
 
   private def connect() {
-    mongoClient = MongoClient(DB_HOST, DB_PORT)
-    mongoDB = mongoClient(DB_NAME)
+    mongoClient = MongoClient(conf.host, conf.port)
+    mongoDB = mongoClient(conf.dbName)
     gridfs = GridFS(mongoDB)
   }
 

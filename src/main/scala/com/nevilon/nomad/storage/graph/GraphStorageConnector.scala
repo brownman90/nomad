@@ -4,6 +4,7 @@ import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import com.tinkerpop.blueprints.Vertex
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
+import com.nevilon.nomad.boot.{InMemoryConfig, BerkeleyConfig, CassandraConfig}
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,13 +23,13 @@ abstract class GraphStorageConnector {
 
 }
 
-class CassandraGraphStorageConnector extends GraphStorageConnector {
+class CassandraGraphStorageConnector(conf: CassandraConfig) extends GraphStorageConnector {
 
   protected val graph = {
-    val conf: Configuration = new BaseConfiguration
-    conf.setProperty("storage.backend", "cassandra")
-    conf.setProperty("storage.hostname", "127.0.0.1")
-    val graph = TitanFactory.open(conf)
+    val titanConf: Configuration = new BaseConfiguration
+    titanConf.setProperty("storage.backend", "cassandra")
+    titanConf.setProperty("storage.hostname", conf.host)
+    val graph = TitanFactory.open(titanConf)
     graph.createKeyIndex("location", classOf[Vertex])
     graph.stopTransaction(Conclusion.SUCCESS)
     graph
@@ -40,19 +41,18 @@ class CassandraGraphStorageConnector extends GraphStorageConnector {
 }
 
 
-class BerkeleyGraphStorageConnector extends GraphStorageConnector {
+class BerkeleyGraphStorageConnector(conf:BerkeleyConfig) extends GraphStorageConnector {
 
   protected val graph = {
 
-    val path: String = "/tmp/b"
-    val conf: Configuration = new BaseConfiguration
+    val titanConf: Configuration = new BaseConfiguration
 
-    conf.setProperty("storage.directory", path)
-    conf.setProperty("storage.backend", "berkeleyje")
-    conf.setProperty("ids.flush", "true")
-    conf.setProperty("storage.cache-percentage", 20)
+    titanConf.setProperty("storage.directory", conf.directory)
+    titanConf.setProperty("storage.backend", "berkeleyje")
+    titanConf.setProperty("ids.flush", "true")
+    titanConf.setProperty("storage.cache-percentage", 20)
 
-    val graph = TitanFactory.open(conf)
+    val graph = TitanFactory.open(titanConf)
     graph.createKeyIndex("location", classOf[Vertex])
     graph.stopTransaction(Conclusion.SUCCESS)
     graph
@@ -64,7 +64,7 @@ class BerkeleyGraphStorageConnector extends GraphStorageConnector {
 
 }
 
-class InMemoryGraphStorageConnector extends GraphStorageConnector {
+class InMemoryGraphStorageConnector(conf:InMemoryConfig) extends GraphStorageConnector {
 
   protected val graph = TitanFactory.openInMemoryGraph()
   graph.createKeyIndex("location", classOf[Vertex])
