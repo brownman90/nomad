@@ -27,7 +27,7 @@ class BFSTraverser(val startVertex: Vertex, val limit: Int) {
     queue += startVertex
 
     while (queue.size > 0 && urls.size < limit) {
-      println(queue.size + " " + closedSet.size + " urls " + urls.size)
+     // println(queue.size + " " + closedSet.size + " urls " + urls.size)
       queue.toList match {
         case ::(head, tail) => {
           queue = queue.tail

@@ -53,6 +53,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
 
   private def onCrawlingComplete(worker: Worker) {
     info("I'm dead! " + worker.startUrl)
+    worker.stop()
     workers -= worker
     if (workers.isEmpty) {
       stopPrinting()

@@ -42,16 +42,19 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
                   info("sorry, no links to crawl ")
                   if (futures.isEmpty) {
                     onCrawlingComplete()
+                  } else{
+                    sync.wait()
                   }
                 }
                 case Some(url) => {
                   onBeforeStart(url)
                   futures += buildFuture(url)
                   info("starting future for crawling " + url.location)
+                  sync.wait()
                 }
               }
             }
-            sync.wait()
+
           } else if (futures.isEmpty) {
             println("COMPLETE CAR!")
             onCrawlingComplete()
