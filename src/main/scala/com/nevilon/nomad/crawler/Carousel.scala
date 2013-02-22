@@ -27,22 +27,20 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
   private val t = new Thread() {
 
     override def run() {
-      var flag = true
 
       sync.synchronized {
-
+        var flag = true
         while (flag) {
 
           if (canWork) {
-            var hasData = true
-            while (futures.size < maxThreads && hasData) {
+
+            while (futures.size < maxThreads && canWork) {
               dataProvider.pop() match {
                 case None => {
-                  hasData = false // exit from loop
                   info("sorry, no links to crawl ")
                   if (futures.isEmpty) {
-                    onCrawlingComplete()
-                  } else{
+                    canWork = false
+                  } else {
                     sync.wait()
                   }
                 }
@@ -50,20 +48,19 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
                   onBeforeStart(url)
                   futures += buildFuture(url)
                   info("starting future for crawling " + url.location)
-                  sync.wait()
                 }
               }
             }
 
-          } else if (futures.isEmpty) {
-            println("COMPLETE CAR!")
-            onCrawlingComplete()
-            println("########################################################")
-            flag = false
-          }else{
-            sync.wait()
+
+            if (canWork) sync.wait()
+          } else if (!canWork) {
+            if (futures.nonEmpty) sync.wait()
+            else {
+              onCrawlingComplete()
+              flag = false
+            }
           }
-         // sync.wait()
         }
       }
 
@@ -73,12 +70,12 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
   t.start()
 
-  def stop() {
-    println("canWOrk === false")
+  def stop(softly: Boolean) {
     canWork = false
-    t.interrupt()
+    if (!softly) {
+      t.interrupt()
+    }
   }
-
 
 
   private def buildFuture(url: Url): Future[Unit] = {
@@ -91,8 +88,6 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
       sync.synchronized {
         sync.notify()
       }
-      //start()
-
     }))
     thisFuture
   }

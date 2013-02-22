@@ -27,33 +27,33 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
 
   def startCrawling() {
     startPrinting()
-    info("start workerks")
+    info("start workers")
     loadWatchers()
   }
 
   private def loadWatchers() {
-    while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) { // add flag for stop
+    while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) {
+      // add flag for stop
       val worker: Worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
-         dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
+        dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
       workers += worker
     }
   }
 
 
-  def isComplete:Boolean = {
-    println("kingsize " + workers.size)
-    workers.foreach(w=>println(w.startUrl))
+  def isComplete: Boolean = {
+    workers.foreach(w => println(w.startUrl))
     workers.isEmpty
   }
 
-  def stop(){
-    println("send stop command "+ workers.size)
-    workers.foreach(w=>w.stop())
+  def stop() {
+    info("send stop command, workers: " + workers.size)
+    workers.foreach(w => w.stop(true))
   }
 
   private def onCrawlingComplete(worker: Worker) {
     info("I'm dead! " + worker.startUrl)
-    worker.stop()
+    worker.stop(false)
     workers -= worker
     if (workers.isEmpty) {
       stopPrinting()

@@ -1,4 +1,1 @@
-http://ev.bartko.info
-http://lenta.ru
-http://nytimes.com
-http://linux.org.ru
+http://aaai.org

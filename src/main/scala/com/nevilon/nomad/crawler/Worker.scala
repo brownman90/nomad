@@ -46,18 +46,18 @@ class Worker(val startUrl: String, val maxThreads: Int,
   })
 
   carousel.setOnCrawlingComplete(() => {
-    println("worker - c complete")
     httpClient.getConnectionManager.shutdown()
     linkProvider.flushExtractedLinks()
+    info("crawling complete " + startUrl)
     onCrawlingComplete(this)
     //flush links
   })
 
 
-  def stop() {
+  def stop(softly:Boolean) {
     //stop carousel
-    println("stop me - carousel " + startUrl)
-    carousel.stop()
+    info("sending stop command to carousel " + startUrl)
+    carousel.stop(softly)
     //flush links
   }
 
