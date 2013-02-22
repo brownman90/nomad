@@ -1,1 +1,4 @@
 http://aaai.org
+http://nlp.stanford.edu/
+http://consc.net/chalmers/
+http://aclweb.org

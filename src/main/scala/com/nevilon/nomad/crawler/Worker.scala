@@ -4,10 +4,13 @@ import org.apache.http.client.HttpClient
 import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
 import com.nevilon.nomad.filter.{Action, FilterProcessorFactory}
 import org.apache.http.HttpEntity
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.{File, FileOutputStream, ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
 import com.nevilon.nomad.logs
 import logs.{Logs, Statistics}
+import org.apache.log4j.lf5.util.StreamUtils
+import io.Source
+import java.nio.file.{FileSystems, Path, Files}
 
 /**
  * Created with IntelliJ IDEA.
@@ -95,7 +98,18 @@ class Worker(val startUrl: String, val maxThreads: Int,
           }
         }
 
-        val gfsId = contentSaver.saveContent(data._1, url.location, entityParams.mimeType.getBaseType)
+        if (entityParams.url.contains(".pdf")){
+          val path = FileSystems.getDefault().getPath("/tmp/pdfs/", System.currentTimeMillis().toString+".pdf");
+          Files.copy(data._1, path)
+
+        }
+        val gfsId = System.currentTimeMillis().toString
+
+
+        //val gfsId = contentSaver.saveContent(data._1, url.location, entityParams.mimeType.getBaseType)
+
+
+
         val fetchedContent = {
           data._2 match {
             case None => {

@@ -9,7 +9,7 @@ def filterUrl(url) {
         return false
     }
     if (url.contains("http://nlp.stanford.edu")) {
-        if (url.contains(".pdf") || url.contains(".tgz")) {
+        if (  url.contains(".tgz")) {
             return false
         }
 
@@ -31,7 +31,7 @@ def filterUrl(url) {
 }
 
 def filterEntity(size, url, mimeType) {
-    if (size > 50000) {
+    if (size > 10000000) {
         return false
     }
     return true
