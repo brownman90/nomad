@@ -1,7 +1,7 @@
 package com.nevilon.nomad.crawler
 
 import org.apache.http.client.HttpClient
-import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
+import com.nevilon.nomad.storage.graph.{APIFacade, FileStorage, TitanDBService}
 import com.nevilon.nomad.filter.{Action, FilterProcessorFactory}
 import org.apache.http.HttpEntity
 import java.io.{File, FileOutputStream, ByteArrayInputStream, InputStream}
@@ -20,10 +20,10 @@ import java.nio.file.{FileSystems, Path, Files}
  */
 
 class Worker(val startUrl: String, val maxThreads: Int,
-             dbService: TitanDBService,
-             onCrawlingComplete: (Worker) => Unit, fileStorage: FileStorage) extends Logs {
+             dbService: APIFacade,
+             onCrawlingComplete: (Worker) => Unit) extends Logs {
 
-  private val contentSaver = new ContentSaver(fileStorage)
+  private val contentSaver = new ContentSaver(dbService)
   private val linkProvider = new LinkProvider(startUrl, dbService)
   linkProvider.findOrCreateUrl(startUrl)
   private val pageDataExtractor = new PageDataExtractor
@@ -57,7 +57,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
   })
 
 
-  def stop(softly:Boolean) {
+  def stop(softly: Boolean) {
     //stop carousel
     info("sending stop command to carousel " + startUrl)
     carousel.stop(softly)
@@ -97,18 +97,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
             (entity.getContent, None)
           }
         }
-
-        if (entityParams.url.contains(".pdf")){
-          val path = FileSystems.getDefault().getPath("/tmp/pdfs/", System.currentTimeMillis().toString+".pdf");
-          Files.copy(data._1, path)
-
-        }
-        val gfsId = System.currentTimeMillis().toString
-
-
-        //val gfsId = contentSaver.saveContent(data._1, url.location, entityParams.mimeType.getBaseType)
-
-
+        val gfsId = contentSaver.saveContent(data._1, url.location, entityParams.mimeType.getBaseType, url.id)
 
         val fetchedContent = {
           data._2 match {

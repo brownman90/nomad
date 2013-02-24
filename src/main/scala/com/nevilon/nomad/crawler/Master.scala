@@ -1,7 +1,7 @@
 package com.nevilon.nomad.crawler
 
 import collection.mutable.ArrayBuffer
-import com.nevilon.nomad.storage.graph.{FileStorage, TitanDBService}
+import com.nevilon.nomad.storage.graph.{APIFacade, FileStorage, TitanDBService}
 import com.nevilon.nomad.logs.Logs
 import collection.mutable
 import com.nevilon.nomad.boot.GlobalConfig
@@ -21,10 +21,10 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private val MAX_THREADS = GlobalConfig.masterConfig.threadsInWorker
   private val NUM_OF_WORKERS = GlobalConfig.masterConfig.workers
 
-  private val dbService = new TitanDBService(true)
+    private val dbService = new APIFacade
   private val workers = new ArrayBuffer[Worker]
 
-  private val fileStorage = new FileStorage(GlobalConfig.mongoDBConfig)
+//  private val fileStorage = new FileStorage(GlobalConfig.mongoDBConfig)
 
   def startCrawling() {
     startPrinting()
@@ -36,7 +36,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
     while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) {
       // add flag for stop
       val worker: Worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
-        dbService, (worker: Worker) => onCrawlingComplete(worker), fileStorage)
+        dbService, (worker: Worker) => onCrawlingComplete(worker))
       workers += worker
     }
   }

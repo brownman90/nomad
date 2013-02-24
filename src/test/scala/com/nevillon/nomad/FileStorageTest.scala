@@ -13,7 +13,7 @@ import com.nevilon.nomad.boot.GlobalConfig
 class FileStorageTest {
 
   @Test def gridFsTest() {
-    val fileStorage = new FileStorage(GlobalConfig.mongoDBConfig)
+   // val fileStorage = new FileStorage(GlobalConfig.mongoDBConfig)
     //fileStorage.connect()
     //Prototypes.timed(fileStorage.testGridFs())
 

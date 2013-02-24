@@ -22,7 +22,7 @@ import scala.Predef.String
  */
 
 
-class TitanDBService(recreateDb: Boolean) extends Logs {
+trait TitanDBService extends Logs {
 
   private val connector =
     GlobalConfig.titanConfig.backend match {

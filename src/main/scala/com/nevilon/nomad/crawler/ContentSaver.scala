@@ -12,8 +12,8 @@ import com.nevilon.nomad.storage.graph.FileStorage
 class ContentSaver(fileStorage: FileStorage) {
 
 
-  def saveContent(is: InputStream, url: String, contentType: String): String = {
-    fileStorage.saveStream(is, url, contentType) match {
+  def saveContent(is: InputStream, url: String, contentType: String, urlId:String): String = {
+    fileStorage.saveStream(is, url, contentType, urlId) match {
       case Some(fileId) => fileId
       case None => {
         throw new RuntimeException("Unable to save file")

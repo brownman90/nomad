@@ -92,7 +92,7 @@ class InMemoryGraphStorageConnector(conf: InMemoryConfig) extends GraphStorageCo
   override def drop() {}
 
   override def connect(): TitanGraph = {
-    TitanFactory.openInMemoryGraph()
+    val graph =  TitanFactory.openInMemoryGraph()
     graph.createKeyIndex("location", classOf[Vertex])
     graph
   }

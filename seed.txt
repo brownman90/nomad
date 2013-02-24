@@ -1,9 +1,2 @@
-http://aaai.org
 http://nlp.stanford.edu/
-http://consc.net/chalmers/
-http://aclweb.org
-https://linguistics.stanford.edu/
-http://www.ai.mit.edu/projects/iiip/nlp.html
-http://www.cs.indiana.edu/~leake/INDEX.html
-http://www.cs.utexas.edu/~aistats/
 
