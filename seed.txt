@@ -1,2 +1,1 @@
-http://nlp.stanford.edu/
-
+http://nlp.stanford.edu

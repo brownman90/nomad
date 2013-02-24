@@ -4,10 +4,12 @@ import com.mongodb.casbah.Imports._
 import collection.mutable.ListBuffer
 import org.joda.time.DateTime
 import java.io.InputStream
-import java.nio.file.{Files, FileSystems}
-import com.nevilon.nomad.crawler.Transformers
-import java.lang.reflect.Field
+import com.nevilon.nomad.crawler.{Url, Transformers}
 import com.nevilon.nomad.utils.StringGenerator
+import com.tinkerpop.blueprints.Direction
+
+import scala.collection.JavaConversions._
+import java.nio.file.{FileSystems, Files}
 
 
 /**
@@ -22,17 +24,13 @@ We do not track files with the same hash here!
  */
 class APIFacade extends TitanDBService with FileStorage {
 
-
-//  test()
-//
 //  def test() {
 //    val entities = findAllPdfFiles()
-//    println(entities.size)
-//
 //    entities.foreach(entity => {
+//      getIncoming(entity.url).foreach(u => println(u.location))
+//      getOutgoing(entity.url).foreach(t => println(t.location))
 //      println(entity)
 //      // println(entity.url + " " + entity.contentType + Transformers.vertex2Url(getUrl(entity.url).get).status)
-//
 //      val path = FileSystems.getDefault().getPath("/tmp/pdfs/", System.currentTimeMillis().toString + ".pdf");
 //      Files.copy(getFileStream(entity.id), path)
 //    })
@@ -60,6 +58,8 @@ class APIFacade extends TitanDBService with FileStorage {
   def findAllPdfFiles(): List[Entity] = {
     val entities = new ListBuffer[Entity]
     val q = ("length" $gt 100000) ++ ("contentType" -> "application/pdf")
+    //val q = ("length" $gt 1)
+
     val result = getGridFS().files(q)
     result.foreach(obj => entities += obj)
     entities.toList
@@ -74,13 +74,26 @@ class APIFacade extends TitanDBService with FileStorage {
   }
 
 
-  def getIncoming() {
-
+  private def getConnectedUrls(url: String, direction: Direction): List[Url] = {
+    getUrl(url) match {
+      case None => List[Url]()
+      case Some(v) => {
+        val incoming = v.getVertices(direction, "relation").map(v => {
+          Transformers.vertex2Url(v)
+        })
+        incoming.toList
+      }
+    }
   }
 
-  def getOutgoing() {
-
+  def getIncoming(url: String): List[Url] = {
+    getConnectedUrls(url, Direction.IN)
   }
+
+  def getOutgoing(url: String): List[Url] = {
+    getConnectedUrls(url, Direction.OUT)
+  }
+
 
 }
 
