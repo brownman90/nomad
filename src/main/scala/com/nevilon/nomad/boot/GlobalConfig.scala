@@ -14,11 +14,14 @@ object GlobalConfig {
   conf.checkValid(ConfigFactory.defaultReference())
 
   val inMemoryConfig: InMemoryConfig = new InMemoryConfig {
-
+    def drop = false
   }
 
   val cassandraConfig: CassandraConfig = new CassandraConfig {
     def host(): String = conf.getString("storage.titan.backends.cassandra.host")
+
+    def drop(): Boolean = conf.getBoolean("storage.titan.backends.cassandra.drop")
+
   }
 
   val berkeleyConfig: BerkeleyConfig = new BerkeleyConfig {
@@ -100,17 +103,20 @@ trait MongoDBConfig {
 
 }
 
-trait InMemoryConfig {}
+trait GraphStorageConfig {
 
-trait BerkeleyConfig {
+  def drop: Boolean
+}
+
+trait InMemoryConfig extends GraphStorageConfig {}
+
+trait BerkeleyConfig extends GraphStorageConfig {
 
   def directory: String
 
-  def drop: Boolean
-
 }
 
-trait CassandraConfig {
+trait CassandraConfig extends GraphStorageConfig {
 
   def host: String
 
