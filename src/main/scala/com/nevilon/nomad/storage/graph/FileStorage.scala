@@ -31,6 +31,9 @@ class FileStorage(conf:MongoDBConfig) {
 
   private def connect() {
     mongoClient = MongoClient(conf.host, conf.port)
+    if(conf.drop){
+      mongoClient.dropDatabase(conf.dbName)
+    }
     mongoDB = mongoClient(conf.dbName)
     gridfs = GridFS(mongoDB)
   }
