@@ -7,6 +7,7 @@ import java.io.InputStream
 import java.nio.file.{Files, FileSystems}
 import com.nevilon.nomad.crawler.Transformers
 import java.lang.reflect.Field
+import com.nevilon.nomad.utils.StringGenerator
 
 
 /**
