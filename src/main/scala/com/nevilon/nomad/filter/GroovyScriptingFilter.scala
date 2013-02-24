@@ -11,32 +11,12 @@ import com.nevilon.nomad.crawler.EntityParams
  * Date: 1/27/13
  * Time: 8:13 AM
  */
-class GroovyScriptingFilter extends Filter[String] {
-
-  var groovyObject: GroovyObject = null
-
-  init()
-
-  private def init() {
-    val parent = getClass.getClassLoader
-    val loader = new GroovyClassLoader(parent)
-    val path = "src/main/scala/com/nevilon/nomad/filter/urlfilter.groovy"
-    val groovyClass = loader.parseClass(new File(path))
-    groovyObject = groovyClass.newInstance().asInstanceOf[GroovyObject]
-  }
-
-  def filter(url: String): Option[Action.Action] = {
-    val result = groovyObject.invokeMethod("filterUrl", ListBuffer[AnyRef](url).toArray[AnyRef])
-    if (!result.asInstanceOf[Boolean]) {
-      Some(Action.Skip)
-    } else None
-  }
-}
 
 
-class GroovyEntityFilter extends Filter[EntityParams] {
 
-  private val engine = new GroovyFilterEngine[EntityParams]("filterEntity") {
+class GroovyEntityFilter(groovyFile: File) extends Filter[EntityParams] {
+
+  private val engine = new GroovyFilterEngine[EntityParams]("filterEntity", groovyFile) {
     def mapArgs(t: EntityParams): List[AnyRef] = {
       List(t.size, t.url, t.mimeType).asInstanceOf[List[AnyRef]]
     }
@@ -49,9 +29,9 @@ class GroovyEntityFilter extends Filter[EntityParams] {
 }
 
 
-class GroovyUrlFilter extends Filter[String] {
+class GroovyUrlFilter(groovyFile: File) extends Filter[String] {
 
-  private val engine = new GroovyFilterEngine[String]("filterUrl") {
+  private val engine = new GroovyFilterEngine[String]("filterUrl", groovyFile) {
     def mapArgs(t: String): List[AnyRef] = {
       List[AnyRef](t)
     }
@@ -64,7 +44,7 @@ class GroovyUrlFilter extends Filter[String] {
 }
 
 
-abstract class GroovyFilterEngine[T](filterMethodName: String) {
+abstract class GroovyFilterEngine[T](filterMethodName: String, groovyFile: File) {
 
   private var groovyObject: GroovyObject = null
 
@@ -74,21 +54,14 @@ abstract class GroovyFilterEngine[T](filterMethodName: String) {
     val parent = getClass.getClassLoader
     val loader = new GroovyClassLoader(parent)
     //temporary!
-    val path = "src/main/scala/com/nevilon/nomad/filter/urlfilter.groovy"
-    val groovyClass = loader.parseClass(new File(path))
+    val groovyClass = loader.parseClass(groovyFile)
     groovyObject = groovyClass.newInstance().asInstanceOf[GroovyObject]
   }
 
   def mapArgs(t: T): List[AnyRef]
 
   def filter(t: T): Option[Action.Action] = {
-    // val data = List(1, 2, 3)
-
-    // val args = (data.map(_.asInstanceOf[AnyRef]))
-    // groovyObject.invokeMethod("echo", args.toArray[AnyRef])
-
-
-    val result = groovyObject.invokeMethod(filterMethodName, mapArgs(t).map(_.asInstanceOf[AnyRef]).toArray[AnyRef])
+    val result = groovyObject.invokeMethod(filterMethodName, mapArgs(t).toArray[AnyRef])
     if (!result.asInstanceOf[Boolean]) {
       Some(Action.Skip)
     } else None

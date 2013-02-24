@@ -1,10 +1,9 @@
-package com.nevilon.nomad
+package com.nevilon.nomad.boot
 
-import boot.SeedReader
-import crawler.Master
 import java.lang.Shutdown
-import logs.Logs
 import com.typesafe.config.ConfigFactory
+import com.nevilon.nomad.logs.Logs
+import com.nevilon.nomad.crawler.Master
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,8 +14,15 @@ import com.typesafe.config.ConfigFactory
 object App extends Logs {
 
   def main(args: Array[String]) {
-    val seedsPath = args(0)
-    val seedReader = new SeedReader(seedsPath)
+    if (args.isEmpty) {
+      throw new Error("missing arguments")
+    }
+    val profilePath = args(0)
+    val profile = new Profile(profilePath)
+
+    val seedReader = new SeedReader(profile.seedFile)
+    GlobalConfig.load(profile.appConfFile)
+    GlobalConfig.profile = profile
 
     val master = new Master(seedReader.getSeeds)
 

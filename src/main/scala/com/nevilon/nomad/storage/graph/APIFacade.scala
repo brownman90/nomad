@@ -10,6 +10,7 @@ import com.tinkerpop.blueprints.Direction
 
 import scala.collection.JavaConversions._
 import java.nio.file.{FileSystems, Files}
+import com.nevilon.nomad.boot.GlobalConfig
 
 
 /**
@@ -23,6 +24,7 @@ We do not track files with the same hash here!
 
  */
 class APIFacade extends TitanDBService with FileStorage {
+
 
 //  def test() {
 //    val entities = findAllPdfFiles()

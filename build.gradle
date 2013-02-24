@@ -9,7 +9,17 @@ apply plugin: 'idea'
 apply plugin: 'idea-scala'
 
 
-mainClassName = "com.nevilon.nomad.App"
+mainClassName = "com.nevilon.nomad.boot.App"
+
+distZip {
+
+into(project.name) {
+        from '.'
+        include 'profiles/'
+}
+
+
+}
 
 run{
 

@@ -9,11 +9,11 @@ import io.Source
  * Date: 2/14/13
  * Time: 6:39 AM
  */
-class SeedReader(pathToFile: String) {
+class SeedReader(file: File) {
 
-  private val seeds: List[String] = Source.fromFile(new File(pathToFile)).getLines().toList
+  private val seeds: List[String] = Source.fromFile(file).getLines().toList
 
-  def getSeeds:List[String]= seeds
+  def getSeeds: List[String] = seeds
 
 
 }

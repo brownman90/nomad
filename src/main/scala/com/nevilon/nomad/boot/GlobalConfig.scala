@@ -1,6 +1,7 @@
 package com.nevilon.nomad.boot
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
+import java.io.File
 
 /**
  * Created with IntelliJ IDEA.
@@ -8,10 +9,22 @@ import com.typesafe.config.ConfigFactory
  * Date: 2/22/13
  * Time: 2:11 PM
  */
+
+
 object GlobalConfig {
 
-  private val conf = ConfigFactory.load()
-  conf.checkValid(ConfigFactory.defaultReference())
+  var profile: Profile = null
+
+  private var conf: Config = null
+
+  def load(configFile: File) {
+    //we need this line because some geniuses think that we will load file only from CLASSPATH
+    // or file specified by -Dconfig.file
+    System.setProperty("config.file", configFile.getAbsolutePath)
+    conf = ConfigFactory.load
+    conf.checkValid(ConfigFactory.defaultReference())
+  }
+
 
   val inMemoryConfig: InMemoryConfig = new InMemoryConfig {
     def drop = false
@@ -125,5 +138,12 @@ trait CassandraConfig extends GraphStorageConfig {
 trait TitanConfig {
 
   def backend: String
+
+}
+
+
+trait ConfigProvider {
+
+  val config = GlobalConfig
 
 }

@@ -2,6 +2,7 @@ package com.nevilon.nomad.filter
 
 import collection.mutable.ListBuffer
 import com.nevilon.nomad.crawler.EntityParams
+import com.nevilon.nomad.boot.GlobalConfig
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,11 +24,11 @@ object FilterProcessorFactory {
     class FilterProcessorWithConstructor extends FilterProcessor with FilterProcessorConstructor
     val fps = new FilterProcessorWithConstructor
 
-    fps.addEntityFilter(new GroovyEntityFilter)
+    fps.addEntityFilter(new GroovyEntityFilter(GlobalConfig.profile.filterFile))
     fps.addEntityFilter(new EndEntityFilter)
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
-    fps.addUrlFilter(new GroovyUrlFilter)
+    fps.addUrlFilter(new GroovyUrlFilter(GlobalConfig.profile.filterFile))
     fps.addUrlFilter(new EndFilter)
     fps
   }

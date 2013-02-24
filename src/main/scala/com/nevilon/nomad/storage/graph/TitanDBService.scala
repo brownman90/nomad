@@ -24,11 +24,13 @@ import scala.Predef.String
 
 trait TitanDBService extends Logs {
 
+  private val conf = GlobalConfig
+
   private val connector =
-    GlobalConfig.titanConfig.backend match {
-      case "cassandra" => new CassandraGraphStorageConnector(GlobalConfig.cassandraConfig)
-      case "inmemory" => new InMemoryGraphStorageConnector(GlobalConfig.inMemoryConfig)
-      case "berkeley" => new BerkeleyGraphStorageConnector(GlobalConfig.berkeleyConfig)
+    conf.titanConfig.backend match {
+      case "cassandra" => new CassandraGraphStorageConnector(conf.cassandraConfig)
+      case "inmemory" => new InMemoryGraphStorageConnector(conf.inMemoryConfig)
+      case "berkeley" => new BerkeleyGraphStorageConnector(conf.berkeleyConfig)
       case _ => {
         error("wrong backend configuration")
         throw new Error
