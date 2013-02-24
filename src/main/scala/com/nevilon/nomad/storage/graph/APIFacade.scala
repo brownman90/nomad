@@ -6,6 +6,7 @@ import org.joda.time.DateTime
 import java.io.InputStream
 import java.nio.file.{Files, FileSystems}
 import com.nevilon.nomad.crawler.Transformers
+import java.lang.reflect.Field
 
 
 /**
@@ -28,7 +29,8 @@ class APIFacade extends TitanDBService with FileStorage {
 //    println(entities.size)
 //
 //    entities.foreach(entity => {
-//      println(entity.url + " " + entity.contentType + Transformers.vertex2Url(getUrl(entity.url).get).status)
+//      println(entity)
+//      // println(entity.url + " " + entity.contentType + Transformers.vertex2Url(getUrl(entity.url).get).status)
 //
 //      val path = FileSystems.getDefault().getPath("/tmp/pdfs/", System.currentTimeMillis().toString + ".pdf");
 //      Files.copy(getFileStream(entity.id), path)
@@ -84,20 +86,6 @@ class APIFacade extends TitanDBService with FileStorage {
 
 class Entity(val size: Long, val url: String,
              val timestamp: DateTime, val id: String,
-             val contentType: String, val md5: String, val urlId: String) {
-
-  /*
-     size
-     url
-     timestamp
-     mimeType
-     id
-     domain
-     getOutgoing
-     getIncoming
+             val contentType: String, val md5: String, val urlId: String) extends StringGenerator
 
 
-   */
-
-
-}
