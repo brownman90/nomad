@@ -69,18 +69,18 @@ class CassandraGraphStorageConnector(conf: CassandraConfig) extends GraphStorage
 
 class BerkeleyGraphStorageConnector(conf: BerkeleyConfig) extends GraphStorageConnector(conf) {
 
-  override def drop() {}
 
-  override def connect(): TitanGraph = {
-    //make or cleanup dir for db
+  override def drop() {
     val dbDir = new File(conf.directory)
     if (dbDir.exists()) {
-      if (conf.drop) {
-        FileUtils.deleteDirectory(dbDir)
-        dbDir.mkdirs()
-      }
-    } else {
-      dbDir.mkdirs()
+      FileUtils.deleteDirectory(dbDir)
+    }
+  }
+
+  override def connect(): TitanGraph = {
+    val dbDir = new File(conf.directory)
+    if (!dbDir.exists()) {
+      dbDir.mkdirs
     }
 
     val titanConf: Configuration = new BaseConfiguration
