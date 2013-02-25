@@ -1,3 +1,13 @@
+/**
+ * Copyright (C) 2012-2013 Vadim Bartko (vadim.bartko@nevilon.com).
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * See file LICENSE.txt for License information.
+ */
 package com.nevilon.nomad.crawler
 
 import org.apache.http.impl.client.DefaultHttpClient
@@ -10,12 +20,7 @@ import org.apache.http.conn.scheme.{PlainSocketFactory, Scheme, SchemeRegistry}
 import org.apache.http.conn.ssl.{TrustStrategy, SSLSocketFactory}
 import java.security.cert
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 1/11/13
- * Time: 11:51 AM
- */
+
 object HttpClientFactory {
 
 
