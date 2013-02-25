@@ -12,6 +12,8 @@ apply plugin: 'license'
 
 mainClassName = "com.nevilon.nomad.boot.App"
 
+version = '0.4-shapshot'
+
 
 /*
 task updateCopyright(type:Exec){
