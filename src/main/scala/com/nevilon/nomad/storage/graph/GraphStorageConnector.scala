@@ -19,8 +19,10 @@ import org.apache.cassandra.thrift.Cassandra
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TFramedTransport, TSocket}
 import com.nevilon.nomad.logs.Logs
+import java.io.File
+import org.apache.commons.io.FileUtils
 
-abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends  Logs{
+abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs {
 
   protected val graph: TitanGraph = {
     if (conf.drop) drop()
@@ -70,6 +72,17 @@ class BerkeleyGraphStorageConnector(conf: BerkeleyConfig) extends GraphStorageCo
   override def drop() {}
 
   override def connect(): TitanGraph = {
+    //make or cleanup dir for db
+    val dbDir = new File(conf.directory)
+    if (dbDir.exists()) {
+      if (conf.drop) {
+        FileUtils.deleteDirectory(dbDir)
+        dbDir.mkdirs()
+      }
+    } else {
+      dbDir.mkdirs()
+    }
+
     val titanConf: Configuration = new BaseConfiguration
 
     titanConf.setProperty("storage.directory", conf.directory)
@@ -95,7 +108,7 @@ class InMemoryGraphStorageConnector(conf: InMemoryConfig) extends GraphStorageCo
   override def drop() {}
 
   override def connect(): TitanGraph = {
-    val graph =  TitanFactory.openInMemoryGraph()
+    val graph = TitanFactory.openInMemoryGraph()
     graph.createKeyIndex("location", classOf[Vertex])
     graph
   }
