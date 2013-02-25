@@ -31,6 +31,9 @@ license {
     mapping {
         scala='JAVADOC_STYLE'
     }
+    sourceSets{
+     'src/'
+   }
 }
 
 distZip {
