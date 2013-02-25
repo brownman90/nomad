@@ -16,6 +16,7 @@ distZip {
 into(project.name) {
         from '.'
         include 'profiles/'
+        include 'LICENSE.txt'
 }
 
 
