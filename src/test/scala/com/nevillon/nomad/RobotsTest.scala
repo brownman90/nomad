@@ -5,12 +5,7 @@ import java.net.URL
 import crawlercommons.robots.{RobotUtils, SimpleRobotRulesParser}
 import crawlercommons.fetcher.UserAgent
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 1/12/13
- * Time: 6:22 AM
- */
+
 class RobotsTest {
 
 

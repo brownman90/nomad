@@ -5,12 +5,6 @@ import org.junit.{Assert, Test}
 import com.nevilon.nomad.crawler.{UrlStatus, Url}
 
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 1/18/13
- * Time: 6:07 AM
- */
 class TitanDBServiceTest {
 
   @Test def testForEquality {

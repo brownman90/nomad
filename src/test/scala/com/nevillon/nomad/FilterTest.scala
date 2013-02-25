@@ -4,12 +4,7 @@ import org.junit.Test
 import collection.mutable
 import collection.mutable.ArrayBuffer
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 1/24/13
- * Time: 11:28 AM
- */
+
 class FilterTest {
 
   @Test
