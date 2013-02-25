@@ -1,28 +1,19 @@
 apply plugin: 'application'
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'idea-scala'
+apply plugin: 'license'
+
 
 apply plugin: 'scala'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'idea-scala'
-
-apply plugin: 'license'
-
 mainClassName = "com.nevilon.nomad.boot.App"
-
-version = '0.4'
-
-distZip{
-
-  appendix = "snapshot"
-
-}
+version = 'snapshot-0.4'
 /*
 task updateCopyright(type:Exec){
   commandLine './addheader.sh'
-
 }
 
 
@@ -33,30 +24,30 @@ processResources.dependsOn{
 */
 
 license {
-    header = project.file('licenseheader.txt')
+  header = project.file('licenseheader.txt')
     mapping {
-        scala='JAVADOC_STYLE'
+      scala='JAVADOC_STYLE'
     }
     sourceSets{
-     'src/'
-   }
+      'src/'
+    }
 }
 
-distZip {
+distZip {Zip zip ->
 
-into(project.name) {
-        from '.'
-        include 'profiles/'
-        include 'LICENSE.txt'
-}
+ zip.archiveName = project.name+'-'+version+'.zip'
+ // appendix = "snapshot"
+  into(zip.archiveName - ".zip") {
+    from '.'
+    include 'profiles/'
+    include 'LICENSE.txt'
+    include 'README'
 
-
+  }
 }
 
 run{
-
-args '/home/hudvin/projects/nomad/seed.txt'
-
+  args '/home/hudvin/projects/nomad/seed.txt'
 }
 
 buildscript {
@@ -147,11 +138,10 @@ dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.0.6'
     compile 'com.sleepycat:je:5.0.58'
     
-    compile 'org.mongodb:casbah-core_2.10:2.5.0'
+    compile 'org.mongodb:casbah-core_2.10:2.5.0'	
     compile 'org.mongodb:casbah-gridfs_2.10:2.5.0'
  
     compile 'com.typesafe:config:1.0.0'	
    
     testCompile group: 'junit', name: 'junit', version: '4.+'
-
 }
