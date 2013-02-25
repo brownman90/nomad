@@ -12,9 +12,13 @@ apply plugin: 'license'
 
 mainClassName = "com.nevilon.nomad.boot.App"
 
-version = '0.4-shapshot'
+version = '0.4'
 
+distZip{
 
+  appendix = "snapshot"
+
+}
 /*
 task updateCopyright(type:Exec){
   commandLine './addheader.sh'
