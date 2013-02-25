@@ -8,8 +8,30 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'idea-scala'
 
+apply plugin: 'license'
 
 mainClassName = "com.nevilon.nomad.boot.App"
+
+
+/*
+task updateCopyright(type:Exec){
+  commandLine './addheader.sh'
+
+}
+
+
+processResources.dependsOn{
+    updateCopyright
+}
+
+*/
+
+license {
+    header = project.file('licenseheader.txt')
+    mapping {
+        scala='JAVADOC_STYLE'
+    }
+}
 
 distZip {
 
@@ -30,12 +52,14 @@ args '/home/hudvin/projects/nomad/seed.txt'
 
 buildscript {
     repositories {
-        maven {
+        mavenCentral()
+	maven {
             url "http://repo.codahale.com"
             url "https://raw.github.com/rodionmoiseev/maven-repo/master/repo/releases"
         }
     }
     dependencies {
+        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.5.0'
         classpath group: 'org.rodion.gradle', name: 'idea-scala-plugin', version: '0.2'
     }
 }
