@@ -30,7 +30,7 @@ You can find nomad*.zip in
      
 
 ### Binary
-Download ready to use binary here
+Download ready to use binary here https://bitbucket.org/hudvin/nomad/downloads/nomad-release-0.3.zip
 
 
 How to run 
