@@ -1,3 +1,5 @@
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/hudvin/nomad/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
 Nomad - focused highly customizable web crawler
 ===
 
