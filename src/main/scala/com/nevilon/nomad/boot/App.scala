@@ -30,6 +30,7 @@ object App extends Logs {
 
     val master = new Master(seedReader.getSeeds)
 
+    /*
     sys.ShutdownHookThread {
       master.stop()
       while (!master.isComplete) {
@@ -39,6 +40,7 @@ object App extends Logs {
 
       info("done")
     }
+    */
 
     master.startCrawling()
   }
