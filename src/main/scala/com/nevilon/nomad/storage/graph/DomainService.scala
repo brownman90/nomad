@@ -24,7 +24,7 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
   def getLinksToCrawl(url: String, limit: Int): List[Url] = {
     withTransaction[List[Url]] {
       implicit tx => {
-        getUnprocessedLinks(URLUtils.getDomainName(URLUtils.normalize(url)), 500)
+        getUnprocessedLinks(URLUtils.getDomainName(URLUtils.normalize(url)), limit)
       }
     }
   }
