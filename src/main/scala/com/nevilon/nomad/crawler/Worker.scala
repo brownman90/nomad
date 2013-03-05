@@ -23,18 +23,23 @@ import io.Source
 import java.nio.file.{FileSystems, Path, Files}
 
 
-
 class Worker(val startUrl: String, val maxThreads: Int,
              dbService: APIFacade,
              onCrawlingComplete: (Worker) => Unit) extends Logs {
 
+  private val domain = URLUtils.getDomainName(URLUtils.normalize(startUrl))
+  dbService.domainService.createDomainIfNeeded(domain)
+
+
   private val contentSaver = new ContentSaver(dbService)
   private val linkProvider = new LinkProvider(startUrl, dbService)
-  linkProvider.findOrCreateUrl(startUrl)
+  linkProvider.findOrCreateUrl(URLUtils.normalize(startUrl))
   private val pageDataExtractor = new PageDataExtractor
 
-  private val domain = URLUtils.normalize(URLUtils.getDomainName(startUrl))
-  private val filterProcessor = FilterProcessorFactory.get(domain)
+  //dbService.test
+
+
+  private val filterProcessor = FilterProcessorFactory.get(URLUtils.normalize(startUrl))
 
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
@@ -74,6 +79,8 @@ class Worker(val startUrl: String, val maxThreads: Int,
     crawledCounter.inc()
     val url = url2.updateStatus(UrlStatus.IN_PROGRESS)
     dbService.saveOrUpdateUrl(url)
+    //drop link here?
+    dbService.removeUrlFromDomain(URLUtils.getDomainName(URLUtils.normalize(startUrl)), url2.location)
 
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {

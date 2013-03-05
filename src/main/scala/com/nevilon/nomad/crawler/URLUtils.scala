@@ -46,7 +46,14 @@ object URLUtils {
     }
   }
 
+  /*
+  def getRootUri(url: String): String = {
+    val normalized = normalize(url)
+    //schema+host?
+  }
+  */
 
+  //move to filter!!!!
   def clearUrlRelations(startUrl: String, linksToClear: List[Relation]): List[Relation] = {
     var clearedUrlRelations = List[Relation]()
     clearedUrlRelations = linksToClear.

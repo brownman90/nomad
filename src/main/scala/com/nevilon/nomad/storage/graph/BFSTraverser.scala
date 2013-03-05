@@ -16,11 +16,11 @@ import com.nevilon.nomad.crawler.{UrlStatus, Transformers, Url}
 import scala.collection.JavaConversions._
 
 
-
 class BFSTraverser(val startVertex: Vertex, val limit: Int) {
 
   private val closedSet = new mutable.HashSet[String]
-  private var queue = new mutable.HashSet[Vertex]  // but we need queue for BFS!!!
+  private var queue = new mutable.HashSet[Vertex]
+  // but we need queue for BFS!!!
   private val urls = new mutable.HashSet[Url]
 
 
@@ -31,8 +31,11 @@ class BFSTraverser(val startVertex: Vertex, val limit: Int) {
     queue += startVertex
 
     while (queue.size > 0 && urls.size < limit) {
-     // println(queue.size + " " + closedSet.size + " urls " + urls.size)
+      println(queue.size + " " + closedSet.size + " urls " + urls.size)
+
+
       queue.toList match {
+        case Nil => throw new Error("Nil")
         case ::(head, tail) => {
           queue = queue.tail
           head.getVertices(Direction.OUT, "relation").filter(v => !queue.contains(v) && !(closedSet contains (Transformers.vertex2Url(v).location))

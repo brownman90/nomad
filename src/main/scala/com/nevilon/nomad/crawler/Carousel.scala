@@ -15,6 +15,7 @@ import concurrent._
 import scala.util.Try
 import scala.Some
 import collection.mutable
+import java.io.FileWriter
 
 class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
@@ -27,6 +28,11 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
   private var canWork = true
 
   private val sync = new Object
+
+  val fw = new FileWriter("log.txt", true);
+
+
+  // fw.close()
 
   private val t = new Thread() {
 
@@ -52,6 +58,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
                   onBeforeStart(url)
                   futures += buildFuture(url)
                   info("starting future for crawling " + url.location)
+                  fw.write(url.location + "\n")
                 }
               }
             }

@@ -31,7 +31,7 @@ class TitanDBServiceTest {
   //      case None => {
   //        Assert.fail("not found")
   //      }
-  //      case Some(vertex) => Assert.assertEquals(url_1.getProperty("location"), vertex.getProperty("location"))
+  //      case Some(element) => Assert.assertEquals(url_1.getProperty("location"), element.getProperty("location"))
   //    }
   //    service.shutdown()
   //  }
@@ -56,9 +56,9 @@ class TitanDBServiceTest {
   //    //
   //    service.getUrl("http://lenta.ru/") match {
   //      case None => Assert.fail("not found")
-  //      case Some(vertex) => {
+  //      case Some(element) => {
   //        import scala.collection.JavaConversions._
-  //        val it = vertex.getVertices(Direction.OUT, "relation").iterator()
+  //        val it = element.getVertices(Direction.OUT, "relation").iterator()
   //        for (v <- it) {
   //          extractedRelations += (new RawUrlRelation("http://lenta.ru/", "", v.getProperty("location").toString, Action.None))
   //        }
@@ -67,9 +67,9 @@ class TitanDBServiceTest {
   //    //
   //    service.getUrl("http://lenta.ru/2") match {
   //      case None => Assert.fail("not found")
-  //      case Some(vertex) => {
+  //      case Some(element) => {
   //        import scala.collection.JavaConversions._
-  //        val it = vertex.getVertices(Direction.OUT, "relation").iterator()
+  //        val it = element.getVertices(Direction.OUT, "relation").iterator()
   //        for (v <- it) {
   //          extractedRelations += (new RawUrlRelation("http://lenta.ru/2", "", v.getProperty("location").toString, Action.None))
   //        }

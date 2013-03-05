@@ -31,6 +31,8 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   private val EXTRACTED_LINKS_LIMIT = GlobalConfig.linksConfig.extractedLinksCache
 
 
+  private val t = new ListBuffer[Url]
+
   /*
     url - normalized form
    */
@@ -45,16 +47,19 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
      */
     //do not update if already present!!!
     dbService.getUrl(url) match {
-      case None=>  dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
-      case Some(v)=> info("url "+ url+ " is already saved")
+      case None => {
+        dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
+        dbService.addUrlToDomain(url)
+      }
+      case Some(v) => info("url " + url + " is already saved")
     }
 
   }
 
   def addToExtractedLinks(linkRelation: Relation) {
-   // synchronized {
-      extractedLinks += linkRelation
- //   }
+    // synchronized {
+    extractedLinks += linkRelation
+    //   }
   }
 
   private def urlToCrawl(): Option[Url] = {
@@ -77,17 +82,22 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
 
 
   def flushExtractedLinks() {
-  //  synchronized {
-      dbService.linkUrls(extractedLinks.toList)
-      info("flushed: " + extractedLinks.length + " link(s)")
-      extractedLinks.clear()
-  //  }
+    //  synchronized {
+    dbService.linkUrls(extractedLinks.toList)
+    info("flushed: " + extractedLinks.length + " link(s)")
+    extractedLinks.clear()
+    //  }
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
     val bfsLinks = dbService.getBFSLinks(startUrl, BFS_LIMIT)
     info("bfs links loaded: " + bfsLinks.size)
-    bfsLinks.toList
+
+    require(t.intersect(bfsLinks).isEmpty)
+
+    t++=bfsLinks
+    bfsLinks
+
   }
 
   def pop(): Option[Url] = {

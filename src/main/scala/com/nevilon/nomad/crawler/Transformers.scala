@@ -10,21 +10,21 @@
  */
 package com.nevilon.nomad.crawler
 
-import com.tinkerpop.blueprints.Vertex
+import com.tinkerpop.blueprints.{Element, Vertex}
 
 
 object Transformers {
 
 
-  def vertex2Url(vertex: Vertex): Url = {
+  implicit def vertex2Url(element: Element): Url = {
     //get status value
-    val statusProperty = vertex.getProperty("status")
+    val statusProperty = element.getProperty("status")
     val status = UrlStatus.withName(statusProperty.toString)
     //get action value
     //get str value of property by calling toString
     implicit def AnyRef2String(property: AnyRef) = property.toString
-    new Url(vertex.getProperty("location"), status, vertex.getId,
-      vertex.getProperty("fileId"))
+    new Url(element.getProperty("location"), status, element.getId,
+      element.getProperty("fileId"))
   }
 
 }

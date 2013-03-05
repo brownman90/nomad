@@ -28,6 +28,15 @@ abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs 
     if (conf.drop) drop()
     connect()
   }
+  createTypes()
+
+  private def createTypes(): TitanGraph = {
+    graph.createKeyIndex("location", classOf[Vertex])
+    //graph.createKeyIndex("domain", classOf[Vertex])
+    graph.makeType().name("domain").dataType(classOf[String]).indexed().unique().functional().makePropertyKey()
+    graph.stopTransaction(Conclusion.SUCCESS)
+    graph
+  }
 
   def getGraph = graph
 
@@ -56,10 +65,9 @@ class CassandraGraphStorageConnector(conf: CassandraConfig) extends GraphStorage
     titanConf.setProperty("storage.backend", "cassandra")
     titanConf.setProperty("storage.hostname", conf.host)
     val graph = TitanFactory.open(titanConf)
-    graph.createKeyIndex("location", classOf[Vertex])
-    graph.stopTransaction(Conclusion.SUCCESS)
     graph
   }
+
 
   def shutdown() {
     graph.shutdown()
