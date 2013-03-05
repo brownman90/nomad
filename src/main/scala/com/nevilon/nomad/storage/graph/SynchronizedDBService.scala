@@ -1,7 +1,7 @@
 package com.nevilon.nomad.storage.graph
 
 import com.nevilon.nomad.crawler.{Relation, Url}
-import com.tinkerpop.blueprints.Vertex
+import com.nevilon.nomad.devtools.Prototypes
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,38 +11,59 @@ import com.tinkerpop.blueprints.Vertex
  */
 class SynchronizedDBService {
 
-  private val titanDBService = new TitanDBService {}
+  private val titanDBService = new TitanDBService
 
   def shutdown = synchronized {
     titanDBService.shutdown()
   }
 
   def getLinksToCrawl(url: String, limit: Int): List[Url] = synchronized {
-    titanDBService.domainService.getLinksToCrawl(url, limit)
+    Prototypes.timed({
+      titanDBService.domainService.getLinksToCrawl(url, limit)
+    }, "getLinksToCrawl")
+
   }
 
   def linkUrls(relations: List[Relation]) = synchronized {
-    titanDBService.linkUrls(relations)
+    Prototypes.timed({
+      titanDBService.linkUrls(relations)
+    }, "linkUrls")
   }
 
-  def getUrl(url: String): Option[Vertex] = synchronized {
-    titanDBService.urlService.getUrl(url)
+  def getUrl(url: String) = synchronized {
+    Prototypes.timed({
+      titanDBService.urlService.getUrl(url)
+    }, "getUrl")
+
   }
 
   def saveOrUpdateUrl(url: Url) = synchronized {
-    titanDBService.urlService.saveOrUpdateUrl(url)
+    Prototypes.timed({
+      titanDBService.urlService.saveOrUpdateUrl(url)
+    }, "saveOrUpdateUrl")
+
   }
 
   def addUrlToDomain(location: String) = synchronized {
-    titanDBService.addUrlToDomain(location)
+    Prototypes.timed({
+      titanDBService.addUrlToDomain(location)
+    }, "addUrlToDomain")
   }
 
   def createDomainIfNeeded(domain: String) = synchronized {
-    titanDBService.domainService.createDomainIfNeeded(domain)
+    Prototypes.timed({
+      titanDBService.domainService.createDomainIfNeeded(domain)
+    }, "createDomainIfNeeded")
+
+
   }
 
   def removeUrlFromDomain(location: String, domain: String) = synchronized {
-    titanDBService.removeUrlFromDomain(location, domain)
+    Prototypes.timed({
+      titanDBService.removeUrlFromDomain(location, domain)
+    }, "removeUrlFromDomain")
+
+
   }
 
 

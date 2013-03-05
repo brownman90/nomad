@@ -13,11 +13,12 @@ package com.nevilon.nomad.devtools
 
 object Prototypes {
 
-  def timed[T](thunk: => T) = {
+  def timed[T](thunk: => T, name: String) = {
     val t1 = System.nanoTime
     val ret = thunk
     val time = System.nanoTime - t1
-    println("Executed in: " + time / 1000000.0 + " millisec")
+
+    println(name + " executed in: " + time / 1000000.0 + " millisec")
     ret
   }
 
