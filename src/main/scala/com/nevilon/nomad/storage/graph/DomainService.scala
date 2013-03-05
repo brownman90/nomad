@@ -57,15 +57,15 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
   }
 
 
-  def isUrlLinkedToDomain(location: String, domain: String)(implicit tx: TitanTransaction): Boolean = {
+  def isUrlLinkedToDomain(location: String, domain: String)(implicit tx: TitanTransaction, superNodeVertex: Vertex): Boolean = {
     getUrlFromDomainPipe(location, domain) match {
       case None => false
       case Some(url) => true
     }
   }
 
-  def getUrlFromDomainPipe(location: String, domain: String)(implicit tx: TitanTransaction): Option[Element] = {
-    val superNodeVertex = getSuperDomainNode
+  def getUrlFromDomainPipe(location: String, domain: String)(implicit tx: TitanTransaction, superNodeVertex: Vertex): Option[Element] = {
+    // val superNodeVertex = getSuperDomainNode
     val pipe = new GremlinPipeline(superNodeVertex).
       out("link").
       has("domain", domain).
@@ -80,7 +80,7 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
     tx.getVertex("domain", superDomainName)
   }
 
-  def getUnprocessedLinks(domain: String, limit: Int)(implicit tx: TitanTransaction): List[Url] = {
+  private def getUnprocessedLinks(domain: String, limit: Int)(implicit tx: TitanTransaction): List[Url] = {
     val superNodeVertex = getDomain(domain).get
     val pipe = new GremlinPipeline(superNodeVertex).
       out("link").
@@ -89,7 +89,9 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
 
     import Transformers.vertex2Url
     val urls = new ListBuffer[Url]
-    pipe.iterator().foreach(v => urls += v)
+    pipe.iterator().foreach(v => {
+      urls += v
+    })
     urls.toList
   }
 
@@ -110,6 +112,7 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
   }
 
   def removeUrlFromDomainInTx(location: String, domain: String)(implicit tx: TitanTransaction) {
+    implicit val superNode = getSuperDomainNode
     getUrlFromDomainPipe(location, domain) match {
       case None => //nothing to do, skip
       case Some(element) => {
