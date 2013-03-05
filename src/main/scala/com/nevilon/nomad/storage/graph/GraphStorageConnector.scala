@@ -99,7 +99,6 @@ class BerkeleyGraphStorageConnector(conf: BerkeleyConfig) extends GraphStorageCo
     titanConf.setProperty("storage.cache-percentage", 20)
 
     val graph = TitanFactory.open(titanConf)
-    graph.createKeyIndex("location", classOf[Vertex])
     graph.stopTransaction(Conclusion.SUCCESS)
     graph
   }

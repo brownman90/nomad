@@ -10,17 +10,13 @@
  */
 package com.nevilon.nomad.crawler
 
-import org.apache.http.client.HttpClient
-import com.nevilon.nomad.storage.graph.{APIFacade, FileStorage, TitanDBService}
+import com.nevilon.nomad.storage.graph.{APIFacade}
 import com.nevilon.nomad.filter.{Action, FilterProcessorFactory}
 import org.apache.http.HttpEntity
-import java.io.{File, FileOutputStream, ByteArrayInputStream, InputStream}
+import java.io.{ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
 import com.nevilon.nomad.logs
 import logs.{Logs, Statistics}
-import org.apache.log4j.lf5.util.StreamUtils
-import io.Source
-import java.nio.file.{FileSystems, Path, Files}
 
 
 class Worker(val startUrl: String, val maxThreads: Int,
@@ -28,7 +24,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
              onCrawlingComplete: (Worker) => Unit) extends Logs {
 
   private val domain = URLUtils.getDomainName(URLUtils.normalize(startUrl))
-  dbService.domainService.createDomainIfNeeded(domain)
+  dbService.createDomainIfNeeded(domain)
 
 
   private val contentSaver = new ContentSaver(dbService)
@@ -36,11 +32,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
   linkProvider.findOrCreateUrl(URLUtils.normalize(startUrl))
   private val pageDataExtractor = new PageDataExtractor
 
-  //dbService.test
-
-
   private val filterProcessor = FilterProcessorFactory.get(URLUtils.normalize(startUrl))
-
 
   private val counterGroup = Statistics.createCounterGroup(startUrl)
 

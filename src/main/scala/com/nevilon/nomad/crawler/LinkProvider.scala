@@ -12,7 +12,7 @@ package com.nevilon.nomad.crawler
 
 import collection.mutable.ListBuffer
 import collection.mutable
-import com.nevilon.nomad.storage.graph.TitanDBService
+import com.nevilon.nomad.storage.graph.{SynchronizedDBService, TitanDBService}
 import com.nevilon.nomad.logs.Logs
 import com.nevilon.nomad.boot.GlobalConfig
 
@@ -22,7 +22,7 @@ trait PopProvider {
 
 }
 
-class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvider with Logs {
+class LinkProvider(domain: String, dbService: SynchronizedDBService) extends PopProvider with Logs {
 
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
@@ -30,8 +30,6 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   private val BFS_LIMIT = GlobalConfig.linksConfig.bfsLimit
   private val EXTRACTED_LINKS_LIMIT = GlobalConfig.linksConfig.extractedLinksCache
 
-
-  private val t = new ListBuffer[Url]
 
   /*
     url - normalized form
@@ -90,14 +88,11 @@ class LinkProvider(domain: String, dbService: TitanDBService) extends PopProvide
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
-    val bfsLinks = dbService.getBFSLinks(startUrl, BFS_LIMIT)
+    //val domain_ = URLUtils.getDomainName(s)
+    //TODO extract domain here!!!
+    val bfsLinks = dbService.getLinksToCrawl(startUrl, BFS_LIMIT)
     info("bfs links loaded: " + bfsLinks.size)
-
-    require(t.intersect(bfsLinks).isEmpty)
-
-    t++=bfsLinks
     bfsLinks
-
   }
 
   def pop(): Option[Url] = {

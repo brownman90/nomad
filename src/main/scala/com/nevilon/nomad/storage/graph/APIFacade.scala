@@ -27,20 +27,20 @@ import com.nevilon.nomad.boot.GlobalConfig
 We do not track files with the same hash here!
 
  */
-class APIFacade extends TitanDBService with FileStorage {
+class APIFacade extends SynchronizedDBService with FileStorage {
 
 
-//  def test() {
-//    val entities = findAllPdfFiles()
-//    entities.foreach(entity => {
-//      getIncoming(entity.url).foreach(u => println(u.location))
-//      getOutgoing(entity.url).foreach(t => println(t.location))
-//      println(entity)
-//      // println(entity.url + " " + entity.contentType + Transformers.vertex2Url(getUrl(entity.url).get).status)
-//      val path = FileSystems.getDefault().getPath("/tmp/pdfs/", System.currentTimeMillis().toString + ".pdf");
-//      Files.copy(getFileStream(entity.id), path)
-//    })
-//  }
+  //  def test() {
+  //    val entities = findAllPdfFiles()
+  //    entities.foreach(entity => {
+  //      getIncoming(entity.url).foreach(u => println(u.location))
+  //      getOutgoing(entity.url).foreach(t => println(t.location))
+  //      println(entity)
+  //      // println(entity.url + " " + entity.contentType + Transformers.vertex2Url(getUrl(entity.url).get).status)
+  //      val path = FileSystems.getDefault().getPath("/tmp/pdfs/", System.currentTimeMillis().toString + ".pdf");
+  //      Files.copy(getFileStream(entity.id), path)
+  //    })
+  //  }
 
 
   /*
