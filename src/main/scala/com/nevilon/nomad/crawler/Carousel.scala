@@ -29,7 +29,6 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
   private val sync = new Object
 
-  val fw = new FileWriter("log.txt", true);
 
 
   // fw.close()
@@ -58,7 +57,6 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
                   onBeforeStart(url)
                   futures += buildFuture(url)
                   info("starting future for crawling " + url.location)
-                  fw.write(url.location + "\n")
                 }
               }
             }

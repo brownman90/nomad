@@ -22,7 +22,7 @@ import scala.Predef.String
 import scala.Some
 
 
-trait TitanDBService extends Logs with TransactionSupport {
+class TitanDBService extends TransactionSupport with Logs {
 
   private val conf = GlobalConfig
 
@@ -57,6 +57,7 @@ trait TitanDBService extends Logs with TransactionSupport {
           }
         }
 
+        implicit val superNode = domainService.getSuperDomainNode
         relations.foreach(relation => {
           val parentPage = getOrCreate(relation.from)
           val childPage = getOrCreate(relation.to)
@@ -65,14 +66,9 @@ trait TitanDBService extends Logs with TransactionSupport {
           import Transformers.vertex2Url
           val newChildUrl: Url = childPage
 
-
           val domain = URLUtils.getDomainName(URLUtils.normalize(URLUtils.getDomainName(newChildUrl.location)))
           if (newChildUrl.status == UrlStatus.NEW && !domainService.isUrlLinkedToDomain(newChildUrl.location, domain)) {
-            //child page = NEW and not linked with domain
             domainService.addUrlToDomain(domain, childPage)
-            println("linked")
-          } else {
-            println("not linked!")
           }
         })
 

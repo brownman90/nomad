@@ -55,9 +55,7 @@ class LinkProvider(domain: String, dbService: SynchronizedDBService) extends Pop
   }
 
   def addToExtractedLinks(linkRelation: Relation) {
-    // synchronized {
     extractedLinks += linkRelation
-    //   }
   }
 
   private def urlToCrawl(): Option[Url] = {
@@ -80,11 +78,9 @@ class LinkProvider(domain: String, dbService: SynchronizedDBService) extends Pop
 
 
   def flushExtractedLinks() {
-    //  synchronized {
     dbService.linkUrls(extractedLinks.toList)
     info("flushed: " + extractedLinks.length + " link(s)")
     extractedLinks.clear()
-    //  }
   }
 
   private def loadLinksForCrawling(startUrl: String): List[Url] = {
@@ -96,9 +92,7 @@ class LinkProvider(domain: String, dbService: SynchronizedDBService) extends Pop
   }
 
   def pop(): Option[Url] = {
-    synchronized {
-      urlToCrawl()
-    }
+    urlToCrawl()
 
   }
 }
