@@ -38,9 +38,9 @@ class SynchronizedDBService {
   }
 
   def saveOrUpdateUrl(url: Url) = synchronized {
-    Prototypes.timed({
+//    Prototypes.timed({
       titanDBService.urlService.saveOrUpdateUrl(url)
-    }, "saveOrUpdateUrl")
+  //  }, "saveOrUpdateUrl")
 
   }
 

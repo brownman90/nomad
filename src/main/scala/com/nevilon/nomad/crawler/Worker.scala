@@ -158,6 +158,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
   }
 
   private def onProcessingComplete(extractedData: ExtractedData, url: Url) {
+    println("onProcessingCompletele")
     dbService.saveOrUpdateUrl(
       url.
         updateStatus(UrlStatus.COMPLETE).

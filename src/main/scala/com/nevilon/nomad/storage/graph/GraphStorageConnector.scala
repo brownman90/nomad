@@ -31,7 +31,8 @@ abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs 
   createTypes()
 
   private def createTypes(): TitanGraph = {
-    graph.createKeyIndex("location", classOf[Vertex])
+    graph.makeType().name("location").dataType(classOf[String]).indexed().unique().functional().makePropertyKey()
+    //graph.createKeyIndex("location", classOf[Vertex])
     //graph.createKeyIndex("domain", classOf[Vertex])
     graph.makeType().name("domain").dataType(classOf[String]).indexed().unique().functional().makePropertyKey()
     graph.stopTransaction(Conclusion.SUCCESS)

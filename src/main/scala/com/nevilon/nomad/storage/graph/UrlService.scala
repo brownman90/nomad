@@ -34,13 +34,17 @@ class UrlService(implicit graph: TitanGraph) extends TransactionSupport {
   def saveOrUpdateUrlInTx(url: Url)(implicit tx: TitanTransaction): Vertex = {
     val vertex = {
       getUrlInTx(url.location) match {
-        case None => tx.addVertex()
+        case None => {
+          val newV = tx.addVertex()
+          newV.setProperty("location", url.location)
+          newV
+        }
         case Some(v) => v
       }
     }
 
     vertex.setProperty("status", url.status.toString)
-    vertex.setProperty("location", url.location)
+
     vertex.setProperty("fileId", url.fileId)
 
     vertex

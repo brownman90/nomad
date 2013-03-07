@@ -20,6 +20,7 @@ import logs.Logs
 import scala.Predef.String
 
 import scala.Some
+import collection.mutable
 
 
 class TitanDBService extends TransactionSupport with Logs {
@@ -50,30 +51,67 @@ class TitanDBService extends TransactionSupport with Logs {
     withTransaction {
       implicit tx => {
 
+        val cache = new mutable.HashMap[String, Vertex]
+
         def getOrCreate(url: Url): Vertex = {
-          urlService.getUrlInTx(url.location) match {
-            case Some(v) => v
-            case None => urlService.saveOrUpdateUrlInTx(url)
-          }
+       //   println(cache.size)
+          cache.getOrElse(url.location, {
+            urlService.getUrlInTx(url.location) match {
+              case Some(v) => {
+                cache.put(url.location, v)
+                v
+              }
+              case None => {
+                val v = urlService.saveOrUpdateUrlInTx(url)
+                cache.put(url.location, v)
+                v
+              }
+            }
+          })
         }
+
+
+        val isLinkedCache = new mutable.HashSet[String]
+
+        var firstTime = 0l
+        var secondTime = 0l
 
         implicit val superNode = domainService.getSuperDomainNode
         relations.foreach(relation => {
+          var startTime = System.currentTimeMillis()
           val parentPage = getOrCreate(relation.from)
           val childPage = getOrCreate(relation.to)
-          tx.addEdge(UUID.randomUUID().toString, parentPage, childPage, "relation")
+          tx.addEdge("", parentPage, childPage, "relation")
+          var endTime = System.currentTimeMillis()
+          firstTime = firstTime + (endTime - startTime)
+
 
           import Transformers.vertex2Url
           val newChildUrl: Url = childPage
 
+
+
+
           val domain = URLUtils.getDomainName(URLUtils.normalize(URLUtils.getDomainName(newChildUrl.location)))
-          if (newChildUrl.status == UrlStatus.NEW && !domainService.isUrlLinkedToDomain(newChildUrl.location, domain)) {
+          startTime = System.currentTimeMillis()
+          if (newChildUrl.status == UrlStatus.NEW && !isLinkedCache.contains(newChildUrl.location) && !domainService.isUrlLinkedToDomain(newChildUrl.location, domain)) {
             domainService.addUrlToDomain(domain, childPage)
+            isLinkedCache.add(newChildUrl.location)
+            //println("isLinkedCache " + isLinkedCache.size)
           }
+          endTime = System.currentTimeMillis()
+          secondTime = secondTime + (endTime - startTime)
+
         })
+
+
+        println("firstTime " + firstTime)
+        println("secondTime " + secondTime)
 
       }
     }
+
+
   }
 
   def removeUrlFromDomain(location: String, domain: String) {

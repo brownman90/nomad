@@ -2,7 +2,7 @@ package com.nevilon.nomad.storage.graph
 
 import com.thinkaurelius.titan.core.{TitanTransaction, TitanGraph}
 import com.nevilon.nomad.crawler.{Transformers, UrlStatus, URLUtils, Url}
-import com.tinkerpop.blueprints.{Vertex, Element}
+import com.tinkerpop.blueprints.{Direction, Vertex, Element}
 import com.tinkerpop.gremlin.java.GremlinPipeline
 import collection.mutable.ListBuffer
 
@@ -58,14 +58,25 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
 
 
   def isUrlLinkedToDomain(location: String, domain: String)(implicit tx: TitanTransaction, superNodeVertex: Vertex): Boolean = {
+    val tmp = tx.getVertex("location", location).getEdges(Direction.IN, "link")
+    tmp.iterator().foreach(e=>{
+      println(e.getLabel)
+    })
+    val linkedCount =  tmp.iterator().size
+    require(linkedCount==0 || linkedCount==1)
+    linkedCount==1
+
+
+    /*
     getUrlFromDomainPipe(location, domain) match {
       case None => false
       case Some(url) => true
     }
+    */
   }
 
   def getUrlFromDomainPipe(location: String, domain: String)(implicit tx: TitanTransaction, superNodeVertex: Vertex): Option[Element] = {
-    // val superNodeVertex = getSuperDomainNode
+    val superNodeVertex = getSuperDomainNode
     val pipe = new GremlinPipeline(superNodeVertex).
       out("link").
       has("domain", domain).
