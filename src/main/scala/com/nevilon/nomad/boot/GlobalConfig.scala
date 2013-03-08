@@ -37,6 +37,8 @@ object GlobalConfig {
 
     def drop(): Boolean = conf.getBoolean("storage.titan.backends.cassandra.drop")
 
+    def keyspace(): String = conf.getString("storage.titan.backends.cassandra.keyspace")
+
   }
 
   val berkeleyConfig: BerkeleyConfig = new BerkeleyConfig {
@@ -134,6 +136,8 @@ trait BerkeleyConfig extends GraphStorageConfig {
 trait CassandraConfig extends GraphStorageConfig {
 
   def host: String
+
+  def keyspace: String
 
 }
 

@@ -36,11 +36,11 @@ abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs 
     graph
   }
 
-  def getGraph = graph
-
   def shutdown() = synchronized {
     graph.shutdown()
   }
+
+  def getGraph = graph
 
   def drop()
 
@@ -50,18 +50,17 @@ abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs 
 
 class CassandraGraphStorageConnector(conf: CassandraConfig) extends GraphStorageConnector(conf) {
 
+
   override def drop() {
     val transport = new TFramedTransport(new TSocket(conf.host, 9160))
     val protocol = new TBinaryProtocol(transport)
     val client = new Cassandra.Client(protocol)
     transport.open()
 
-    client.describe_keyspaces().find(ksDef => {
-      ksDef.name == "titan"
-    }) match {
-      case None =>  info("keyspace not found")
+    client.describe_keyspaces().find(ksDef => ksDef.name == conf.keyspace) match {
+      case None => info("keyspace not found")
       case _ => {
-        client.system_drop_keyspace("titan")
+        client.system_drop_keyspace(conf.keyspace)
         info("keyspace is dropped")
       }
     }
@@ -72,6 +71,7 @@ class CassandraGraphStorageConnector(conf: CassandraConfig) extends GraphStorage
     val titanConf: Configuration = new BaseConfiguration
     titanConf.setProperty("storage.backend", "cassandra")
     titanConf.setProperty("storage.hostname", conf.host)
+    titanConf.setProperty("storage.keyspace", conf.keyspace)
     val graph = TitanFactory.open(titanConf)
     graph
   }
