@@ -12,7 +12,6 @@ package com.nevilon.nomad.storage.graph
 
 import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import org.apache.commons.configuration.{BaseConfiguration, Configuration}
-import com.tinkerpop.blueprints.Vertex
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
 import com.nevilon.nomad.boot.{GraphStorageConfig, InMemoryConfig, BerkeleyConfig, CassandraConfig}
 import org.apache.cassandra.thrift.Cassandra
@@ -21,6 +20,7 @@ import org.apache.thrift.transport.{TFramedTransport, TSocket}
 import com.nevilon.nomad.logs.Logs
 import java.io.File
 import org.apache.commons.io.FileUtils
+import scala.collection.JavaConversions._
 
 abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs {
 
@@ -55,8 +55,16 @@ class CassandraGraphStorageConnector(conf: CassandraConfig) extends GraphStorage
     val protocol = new TBinaryProtocol(transport)
     val client = new Cassandra.Client(protocol)
     transport.open()
-    client.system_drop_keyspace("titan") // "titan" is default keyspace
-    info("keyspace is dropped")
+
+    client.describe_keyspaces().find(ksDef => {
+      ksDef.name == "titan"
+    }) match {
+      case None =>  info("keyspace not found")
+      case _ => {
+        client.system_drop_keyspace("titan")
+        info("keyspace is dropped")
+      }
+    }
     transport.close()
   }
 
