@@ -24,16 +24,13 @@ import org.apache.commons.io.FileUtils
 
 abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs {
 
-  protected val graph: TitanGraph = {
+  protected val graph: TitanGraph = synchronized {
     if (conf.drop) drop()
-    connect()
+    createTypes(connect())
   }
-  createTypes()
 
-  private def createTypes(): TitanGraph = {
+  private def createTypes(graph: TitanGraph): TitanGraph = {
     graph.makeType().name("location").dataType(classOf[String]).indexed().unique().functional().makePropertyKey()
-    //graph.createKeyIndex("location", classOf[Vertex])
-    //graph.createKeyIndex("domain", classOf[Vertex])
     graph.makeType().name("domain").dataType(classOf[String]).indexed().unique().functional().makePropertyKey()
     graph.stopTransaction(Conclusion.SUCCESS)
     graph
@@ -41,7 +38,9 @@ abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs 
 
   def getGraph = graph
 
-  def shutdown()
+  def shutdown() = synchronized {
+    graph.shutdown()
+  }
 
   def drop()
 
@@ -69,10 +68,6 @@ class CassandraGraphStorageConnector(conf: CassandraConfig) extends GraphStorage
     graph
   }
 
-
-  def shutdown() {
-    graph.shutdown()
-  }
 }
 
 
@@ -105,25 +100,15 @@ class BerkeleyGraphStorageConnector(conf: BerkeleyConfig) extends GraphStorageCo
   }
 
 
-  def shutdown() {
-    graph.shutdown()
-  }
-
 }
 
 class InMemoryGraphStorageConnector(conf: InMemoryConfig) extends GraphStorageConnector(conf) {
 
   override def drop() {}
 
-  override def connect(): TitanGraph = {
-    val graph = TitanFactory.openInMemoryGraph()
-    graph.createKeyIndex("location", classOf[Vertex])
-    graph
+  override def connect(): TitanGraph = synchronized {
+    TitanFactory.openInMemoryGraph()
   }
 
-
-  def shutdown() {
-    graph.shutdown()
-  }
 
 }

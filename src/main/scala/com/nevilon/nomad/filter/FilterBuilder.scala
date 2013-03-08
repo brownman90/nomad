@@ -104,7 +104,7 @@ trait FilterProcessorConstructor extends AbsFilterProcessor {
 object Action extends Enumeration {
 
   type Action = Value
-  val Download, Skip, None = Value
+  val Download, Skip, None= Value
 }
 
 

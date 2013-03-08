@@ -11,7 +11,7 @@
 package com.nevilon.nomad.crawler
 
 import com.nevilon.nomad.storage.graph.{APIFacade}
-import com.nevilon.nomad.filter.{Action, FilterProcessorFactory}
+import com.nevilon.nomad.filter.{UrlsCleaner, Action, FilterProcessorFactory}
 import org.apache.http.HttpEntity
 import java.io.{ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
@@ -134,7 +134,9 @@ class Worker(val startUrl: String, val maxThreads: Int,
       new Relation(url, new Url(item.url, UrlStatus.NEW))
     })
     //remove invalid links
-    val clearedLinks = URLUtils.clearUrlRelations(startUrl, relations.toList)
+    val clearedLinks = new UrlsCleaner().cleanUrls(relations.toList, startUrl)
+
+
     //pass to filter
     val filteredRawUrlRelations = clearedLinks.map(relation => {
       val action = filterProcessor.filterUrl(relation.to.location)

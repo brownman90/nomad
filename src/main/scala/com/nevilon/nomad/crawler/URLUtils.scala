@@ -13,10 +13,9 @@ package com.nevilon.nomad.crawler
 import java.net.URI
 import org.apache.log4j.LogManager
 import org.apache.commons.httpclient.util.URIUtil
+import com.nevilon.nomad.logs.Logs
 
-object URLUtils {
-
-  private val logger = LogManager.getLogger(this.getClass.getName)
+object URLUtils extends Logs {
 
   def normalize(urlValue: String): String = {
     var url = urlValue.trim
@@ -54,39 +53,7 @@ object URLUtils {
   */
 
   //move to filter!!!!
-  def clearUrlRelations(startUrl: String, linksToClear: List[Relation]): List[Relation] = {
-    var clearedUrlRelations = List[Relation]()
-    clearedUrlRelations = linksToClear.
-      filter(urlRelation => !urlRelation.to.location.contains("@")).
-      filter(urlRelation => !urlRelation.to.location.startsWith("mailto:")).
-      filter(urlRelation => !urlRelation.to.location.trim().isEmpty)
-    //remove empty links
-    //normalization
-    //normalize from?
-    clearedUrlRelations = clearedUrlRelations.map(relation => {
-      val normalizedLocation = URLUtils.normalize(relation.to.location)
-      new Relation(relation.from, relation.to.updateLocation(normalizedLocation))
-    })
-
-    clearedUrlRelations = clearedUrlRelations.filter(relation => !relation.from.equals(relation.to)) // check this!!!!)
-    //remove links to another domains
-    clearedUrlRelations = clearedUrlRelations.filter(urlRelation => {
-      try {
-        //accept links from this domain only!
-        val startDomain = URLUtils.getDomainName(startUrl)
-        val linkDomain = URLUtils.getDomainName(urlRelation.to.location)
-        startDomain.equals(linkDomain)
-      }
-      catch {
-        case e: Exception => {
-          logger.error("error during clearLinks", e)
-        }
-        false
-      }
-    })
-    //remove duplicates
-    clearedUrlRelations.distinct
-
-  }
-
+//
 }
+
+
