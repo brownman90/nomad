@@ -15,16 +15,22 @@ import com.tinkerpop.blueprints.{Element, Vertex}
 
 object Transformers {
 
+  private implicit def AnyRef2String(property: AnyRef) = property.toString
+
 
   implicit def vertex2Url(element: Element): Url = {
     //get status value
     val statusProperty = element.getProperty("status")
-    val status = UrlStatus.withName(statusProperty.toString)
+    val status = UrlStatus.withName(statusProperty)
     //get action value
     //get str value of property by calling toString
-    implicit def AnyRef2String(property: AnyRef) = property.toString
     new Url(element.getProperty("location"), status, element.getId,
       element.getProperty("fileId"))
+  }
+
+  implicit def vertex2Domain(element: Element): Domain = {
+    val status = DomainStatus.withName(element.getProperty("status"))
+    new Domain(element.getProperty("name"), status)
   }
 
 }

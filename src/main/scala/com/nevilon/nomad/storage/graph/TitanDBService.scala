@@ -21,6 +21,7 @@ import scala.Predef.String
 
 import scala.Some
 import collection.mutable
+import scala.Some
 
 
 class TitanDBService extends TransactionSupport with Logs {
@@ -54,7 +55,7 @@ class TitanDBService extends TransactionSupport with Logs {
         val cache = new mutable.HashMap[String, Vertex]
 
         def getOrCreate(url: Url): Vertex = {
-       //   println(cache.size)
+          //   println(cache.size)
           cache.getOrElse(url.location, {
             urlService.getUrlInTx(url.location) match {
               case Some(v) => {
@@ -92,9 +93,10 @@ class TitanDBService extends TransactionSupport with Logs {
 
 
 
-          val domain = URLUtils.getDomainName(URLUtils.normalize(URLUtils.getDomainName(newChildUrl.location)))
+          val domainName = URLUtils.getDomainName(URLUtils.normalize(URLUtils.getDomainName(newChildUrl.location)))
+          val domain = new Domain(domainName, DomainStatus.NEW)
           startTime = System.currentTimeMillis()
-          if (newChildUrl.status == UrlStatus.NEW && !isLinkedCache.contains(newChildUrl.location) && !domainService.isUrlLinkedToDomain(newChildUrl.location, domain)) {
+          if (newChildUrl.status == UrlStatus.NEW && !isLinkedCache.contains(newChildUrl.location) && !domainService.isUrlLinkedToDomain(newChildUrl.location)) {
             domainService.addUrlToDomain(domain, childPage)
             isLinkedCache.add(newChildUrl.location)
             //println("isLinkedCache " + isLinkedCache.size)
@@ -114,7 +116,7 @@ class TitanDBService extends TransactionSupport with Logs {
 
   }
 
-  def removeUrlFromDomain(location: String, domain: String) {
+  def removeUrlFromDomain(location: String, domain: Domain) {
     withTransaction {
       implicit tx => {
         domainService.removeUrlFromDomainInTx(location, domain)
@@ -125,7 +127,8 @@ class TitanDBService extends TransactionSupport with Logs {
   def addUrlToDomain(location: String) {
     withTransaction {
       implicit tx => {
-        val domain = URLUtils.getDomainName(URLUtils.normalize(location))
+        val domainName = URLUtils.getDomainName(URLUtils.normalize(location))
+        val domain = new Domain(domainName, DomainStatus.NEW)
         domainService.addUrlToDomain(domain, urlService.getUrlInTx(location).get)
       }
     }

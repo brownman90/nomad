@@ -1,6 +1,6 @@
 package com.nevilon.nomad.storage.graph
 
-import com.nevilon.nomad.crawler.{Relation, Url}
+import com.nevilon.nomad.crawler.{Domain, DomainStatus, Relation, Url}
 import com.nevilon.nomad.devtools.Prototypes
 
 /**
@@ -17,9 +17,9 @@ class SynchronizedDBService {
     titanDBService.shutdown()
   }
 
-  def getLinksToCrawl(url: String, limit: Int): List[Url] = synchronized {
+  def getLinksToCrawl(domain: Domain, limit: Int): List[Url] = synchronized {
     Prototypes.timed({
-      titanDBService.domainService.getLinksToCrawl(url, limit)
+      titanDBService.domainService.getLinksToCrawl(domain, limit)
     }, "getLinksToCrawl")
 
   }
@@ -38,9 +38,9 @@ class SynchronizedDBService {
   }
 
   def saveOrUpdateUrl(url: Url) = synchronized {
-//    Prototypes.timed({
-      titanDBService.urlService.saveOrUpdateUrl(url)
-  //  }, "saveOrUpdateUrl")
+    //    Prototypes.timed({
+    titanDBService.urlService.saveOrUpdateUrl(url)
+    //  }, "saveOrUpdateUrl")
 
   }
 
@@ -50,7 +50,7 @@ class SynchronizedDBService {
     }, "addUrlToDomain")
   }
 
-  def createDomainIfNeeded(domain: String) = synchronized {
+  def createDomainIfNeeded(domain: Domain) = synchronized {
     Prototypes.timed({
       titanDBService.domainService.createDomainIfNeeded(domain)
     }, "createDomainIfNeeded")
@@ -58,12 +58,19 @@ class SynchronizedDBService {
 
   }
 
-  def removeUrlFromDomain(location: String, domain: String) = synchronized {
+  def removeUrlFromDomain(location: String, domain: Domain) = synchronized {
     Prototypes.timed({
       titanDBService.removeUrlFromDomain(location, domain)
     }, "removeUrlFromDomain")
+  }
 
 
+  def getDomainWithStatus(domainStatus: DomainStatus.Value): Option[Domain] = synchronized {
+    titanDBService.domainService.getDomainWithStatus(domainStatus)
+  }
+
+  def updateDomain(domain: Domain) = synchronized {
+    titanDBService.domainService.updateDomain(domain)
   }
 
 

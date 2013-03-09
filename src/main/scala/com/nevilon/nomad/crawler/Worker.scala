@@ -23,12 +23,12 @@ class Worker(val startUrl: String, val maxThreads: Int,
              dbService: APIFacade,
              onCrawlingComplete: (Worker) => Unit) extends Logs {
 
-  private val domain = URLUtils.getDomainName(URLUtils.normalize(startUrl))
+  private val domain = new Domain(URLUtils.getDomainName(URLUtils.normalize(startUrl)), DomainStatus.NEW)
   dbService.createDomainIfNeeded(domain)
 
 
   private val contentSaver = new ContentSaver(dbService)
-  private val linkProvider = new LinkProvider(startUrl, dbService)
+  private val linkProvider = new LinkProvider(domain, dbService)
   linkProvider.findOrCreateUrl(URLUtils.normalize(startUrl))
   private val pageDataExtractor = new PageDataExtractor
 
@@ -72,7 +72,7 @@ class Worker(val startUrl: String, val maxThreads: Int,
     val url = url2.updateStatus(UrlStatus.IN_PROGRESS)
     dbService.saveOrUpdateUrl(url)
     //drop link here?
-    dbService.removeUrlFromDomain(URLUtils.getDomainName(URLUtils.normalize(startUrl)), url2.location)
+    dbService.removeUrlFromDomain(url2.location, domain)
 
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {

@@ -71,10 +71,6 @@ class Url(
   def updateFileId(newFileId: String): Url = {
     new Url(location, status, id, newFileId)
   }
-//
-//  def getDomain:String = {
-//    URLUtils.getDomainName(location)
-//  }
 
 
   override def equals(obj: Any): Boolean = {

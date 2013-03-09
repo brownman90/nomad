@@ -22,7 +22,7 @@ trait PopProvider {
 
 }
 
-class LinkProvider(domain: String, dbService: SynchronizedDBService) extends PopProvider with Logs {
+class LinkProvider(domain: Domain, dbService: SynchronizedDBService) extends PopProvider with Logs {
 
   private val extractedLinks = new ListBuffer[Relation]
   private val linksToCrawl = new mutable.ArrayStack[Url]
@@ -83,10 +83,10 @@ class LinkProvider(domain: String, dbService: SynchronizedDBService) extends Pop
     extractedLinks.clear()
   }
 
-  private def loadLinksForCrawling(startUrl: String): List[Url] = {
+  private def loadLinksForCrawling(domain: Domain): List[Url] = {
     //val domain_ = URLUtils.getDomainName(s)
     //TODO extract domain here!!!
-    val bfsLinks = dbService.getLinksToCrawl(startUrl, BFS_LIMIT)
+    val bfsLinks = dbService.getLinksToCrawl(domain, BFS_LIMIT)
     info("bfs links loaded: " + bfsLinks.size)
     bfsLinks
   }
