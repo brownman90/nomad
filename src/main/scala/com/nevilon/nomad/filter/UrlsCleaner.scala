@@ -1,14 +1,18 @@
+/**
+ * Copyright (C) 2012-2013 Vadim Bartko (vadim.bartko@nevilon.com).
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * See file LICENSE.txt for License information.
+ */
 package com.nevilon.nomad.filter
 
 import com.nevilon.nomad.logs.Logs
 import com.nevilon.nomad.crawler.{URLUtils, Relation}
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 3/8/13
- * Time: 10:04 AM
- */
 class UrlsCleaner extends Logs {
 
   def cleanUrls(linksToClear: List[Relation], startUrl: String): List[Relation] = {
