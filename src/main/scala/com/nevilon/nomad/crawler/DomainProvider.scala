@@ -19,8 +19,8 @@ class DomainInjector(dbService: SynchronizedDBService) {
     dbService.createDomainIfNeeded(new Domain(domainStr, DomainStatus.NEW))
     dbService.getUrl(normalizedUrl) match {
       case None => {
-        dbService.saveOrUpdateUrl(new Url(normalizedUrl, UrlStatus.NEW))
-        dbService.addUrlToDomain(normalizedUrl)
+        val url = dbService.saveOrUpdateUrl(new Url(normalizedUrl, UrlStatus.NEW))
+        dbService.addUrlToDomain(url)
       }
       case Some(v) => //should exists
     }

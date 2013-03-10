@@ -63,7 +63,7 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
     val url = url2.updateStatus(UrlStatus.IN_PROGRESS)
     dbService.saveOrUpdateUrl(url)
     //drop link here?
-    dbService.removeUrlFromDomain(url2.location, domain)
+    dbService.removeUrlFromDomain(url2)
 
     val fetcher = new Fetcher(url, httpClient)
     fetcher.onException((e: Exception) => {

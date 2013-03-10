@@ -46,8 +46,8 @@ class LinkProvider(domain: Domain, dbService: SynchronizedDBService) extends Pop
     //do not update if already present!!!
     dbService.getUrl(url) match {
       case None => {
-        dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
-        dbService.addUrlToDomain(url)
+        val savedUrl = dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
+        dbService.addUrlToDomain(savedUrl)
       }
       case Some(v) => info("url " + url + " is already saved")
     }

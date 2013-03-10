@@ -30,27 +30,27 @@ class SynchronizedDBService {
     }, "linkUrls")
   }
 
-  def getUrl(url: String) = synchronized {
+  def getUrl(url: String): Option[Url] = synchronized {
     Prototypes.timed({
       titanDBService.urlService.getUrl(url)
     }, "getUrl")
 
   }
 
-  def saveOrUpdateUrl(url: Url) = synchronized {
+  def saveOrUpdateUrl(url: Url):Url = synchronized {
     //    Prototypes.timed({
     titanDBService.urlService.saveOrUpdateUrl(url)
     //  }, "saveOrUpdateUrl")
 
   }
 
-  def addUrlToDomain(location: String) = synchronized {
+  def addUrlToDomain(url: Url):Unit = synchronized {
     Prototypes.timed({
-      titanDBService.addUrlToDomain(location)
+      titanDBService.addUrlToDomain(url)
     }, "addUrlToDomain")
   }
 
-  def createDomainIfNeeded(domain: Domain) = synchronized {
+  def createDomainIfNeeded(domain: Domain):Unit = synchronized {
     Prototypes.timed({
       titanDBService.domainService.createDomainIfNeeded(domain)
     }, "createDomainIfNeeded")
@@ -58,9 +58,9 @@ class SynchronizedDBService {
 
   }
 
-  def removeUrlFromDomain(location: String, domain: Domain) = synchronized {
+  def removeUrlFromDomain(url: Url):Unit = synchronized {
     Prototypes.timed({
-      titanDBService.removeUrlFromDomain(location, domain)
+      titanDBService.removeUrlFromDomain(url)
     }, "removeUrlFromDomain")
   }
 
@@ -69,7 +69,7 @@ class SynchronizedDBService {
     titanDBService.domainService.getDomainWithStatus(domainStatus)
   }
 
-  def updateDomain(domain: Domain) = synchronized {
+  def updateDomain(domain: Domain):Unit = synchronized {
     titanDBService.domainService.updateDomain(domain)
   }
 

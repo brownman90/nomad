@@ -1,7 +1,7 @@
 package com.nevilon.nomad.storage.graph
 
 import com.thinkaurelius.titan.core.{TitanTransaction, TitanGraph}
-import com.nevilon.nomad.crawler.Url
+import com.nevilon.nomad.crawler.{Transformers, Url}
 import com.tinkerpop.blueprints.Vertex
 
 import scala.collection.JavaConversions._
@@ -15,20 +15,22 @@ import scala.collection.JavaConversions._
 class UrlService(implicit graph: TitanGraph) extends TransactionSupport {
 
 
-  def saveOrUpdateUrl(url: Url) = {
+  def saveOrUpdateUrl(url: Url): Url = {
     withTransaction {
       implicit tx => {
-        saveOrUpdateUrlInTx(url)
+        Transformers.vertex2Url(saveOrUpdateUrlInTx(url))
       }
     }
   }
 
 
-  //TODO return Url, not raw vertex
-  def getUrl(url: String): Option[Vertex] =  {
-    withTransaction[Option[Vertex]] {
+  def getUrl(location: String): Option[Url] = {
+    withTransaction[Option[Url]] {
       implicit tx =>
-        getUrlInTx(url)
+        getUrlInTx(location) match {
+          case None => None
+          case Some(v) => Some(Transformers.vertex2Url(v))
+        }
     }
   }
 
@@ -37,28 +39,21 @@ class UrlService(implicit graph: TitanGraph) extends TransactionSupport {
       getUrlInTx(url.location) match {
         case None => {
           val newV = tx.addVertex()
-          newV.setProperty("location", url.location)
+          newV.setProperty(GraphProperties.Url.locationProperty, url.location)
           newV
         }
         case Some(v) => v
       }
     }
-
-    vertex.setProperty("status", url.status.toString)
-
-    vertex.setProperty("fileId", url.fileId)
-
+    vertex.setProperty(GraphProperties.Url.statusProperty, url.status.toString)
+    vertex.setProperty(GraphProperties.Url.fileIdProperty, url.fileId)
     vertex
   }
 
-  def getUrlInTx(url: String)(implicit tx: TitanTransaction): Option[Vertex] = {
-    val vertices = tx.getVertices("location", url)
-    if (vertices.isEmpty) None
-    else if (vertices.size > 1)
-      throw new RuntimeException("There are more than one page with this url!")
-    else Some(vertices.iterator.next())
+  def getUrlInTx(location: String)(implicit tx: TitanTransaction): Option[Vertex] = {
+    val vertex = tx.getVertex(GraphProperties.Url.locationProperty, location)
+    if (vertex == null) None else Some(vertex)
   }
 
 
 }
-

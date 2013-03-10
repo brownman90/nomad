@@ -11,6 +11,7 @@
 package com.nevilon.nomad.crawler
 
 import com.tinkerpop.blueprints.{Element, Vertex}
+import com.nevilon.nomad.storage.graph.GraphProperties
 
 
 object Transformers {
@@ -20,17 +21,17 @@ object Transformers {
 
   implicit def vertex2Url(element: Element): Url = {
     //get status value
-    val statusProperty = element.getProperty("status")
+    val statusProperty = element.getProperty(GraphProperties.Url.statusProperty)
     val status = UrlStatus.withName(statusProperty)
     //get action value
     //get str value of property by calling toString
-    new Url(element.getProperty("location"), status, element.getId,
-      element.getProperty("fileId"))
+    new Url(element.getProperty(GraphProperties.Url.locationProperty), status, element.getId,
+      element.getProperty(GraphProperties.Url.fileIdProperty))
   }
 
   implicit def vertex2Domain(element: Element): Domain = {
-    val status = DomainStatus.withName(element.getProperty("status"))
-    new Domain(element.getProperty("domain"), status)
+    val status = DomainStatus.withName(element.getProperty(GraphProperties.Domain.statusProperty))
+    new Domain(element.getProperty(GraphProperties.Domain.nameProperty), status)
   }
 
 }

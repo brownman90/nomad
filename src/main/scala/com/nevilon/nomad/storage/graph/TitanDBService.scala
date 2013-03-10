@@ -51,11 +51,9 @@ class TitanDBService extends TransactionSupport with Logs {
   def linkUrls(relations: List[Relation]) {
     withTransaction {
       implicit tx => {
-
         val cache = new mutable.HashMap[String, Vertex]
 
         def getOrCreate(url: Url): Vertex = {
-          //   println(cache.size)
           cache.getOrElse(url.location, {
             urlService.getUrlInTx(url.location) match {
               case Some(v) => {
@@ -77,7 +75,7 @@ class TitanDBService extends TransactionSupport with Logs {
         var firstTime = 0l
         var secondTime = 0l
 
-        implicit val superNode = domainService.getSuperDomainNode
+        implicit val superNode = domainService.getSuperDomainNodeInTx
         relations.foreach(relation => {
           var startTime = System.currentTimeMillis()
           val parentPage = getOrCreate(relation.from)
@@ -86,50 +84,40 @@ class TitanDBService extends TransactionSupport with Logs {
           var endTime = System.currentTimeMillis()
           firstTime = firstTime + (endTime - startTime)
 
-
-          import Transformers.vertex2Url
-          val newChildUrl: Url = childPage
-
-
-
+          val newChildUrl: Url = Transformers.vertex2Url(childPage)
 
           val domainName = URLUtils.getDomainName(URLUtils.normalize(URLUtils.getDomainName(newChildUrl.location)))
           val domain = new Domain(domainName, DomainStatus.NEW)
           startTime = System.currentTimeMillis()
-          if (newChildUrl.status == UrlStatus.NEW && !isLinkedCache.contains(newChildUrl.location) && !domainService.isUrlLinkedToDomain(newChildUrl.location)) {
-            domainService.addUrlToDomain(domain, childPage)
+          if (newChildUrl.status == UrlStatus.NEW && !isLinkedCache.contains(newChildUrl.location) &&
+            !domainService.isUrlLinkedToDomainInTx(newChildUrl)) {
+            domainService.addUrlToDomainInTx(domain, childPage)
             isLinkedCache.add(newChildUrl.location)
-            //println("isLinkedCache " + isLinkedCache.size)
           }
           endTime = System.currentTimeMillis()
           secondTime = secondTime + (endTime - startTime)
 
         })
-
-
         println("firstTime " + firstTime)
         println("secondTime " + secondTime)
-
-      }
-    }
-
-
-  }
-
-  def removeUrlFromDomain(location: String, domain: Domain) {
-    withTransaction {
-      implicit tx => {
-        domainService.removeUrlFromDomainInTx(location, domain)
       }
     }
   }
 
-  def addUrlToDomain(location: String) {
+  def removeUrlFromDomain(url: Url) {
     withTransaction {
       implicit tx => {
-        val domainName = URLUtils.getDomainName(URLUtils.normalize(location))
+        domainService.removeUrlFromDomainInTx(url)
+      }
+    }
+  }
+
+  def addUrlToDomain(url: Url) {
+    withTransaction {
+      implicit tx => {
+        val domainName = URLUtils.getDomainName(URLUtils.normalize(url.location))
         val domain = new Domain(domainName, DomainStatus.NEW)
-        domainService.addUrlToDomain(domain, urlService.getUrlInTx(location).get)
+        domainService.addUrlToDomainInTx(domain, urlService.getUrlInTx(url.location).get)
       }
     }
   }
