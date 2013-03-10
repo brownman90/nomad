@@ -13,6 +13,7 @@ package com.nevilon.nomad.filter
 import collection.mutable.ListBuffer
 import com.nevilon.nomad.crawler.EntityParams
 import com.nevilon.nomad.boot.GlobalConfig
+import java.io.File
 
 object FilterProcessorFactory {
 
@@ -28,11 +29,11 @@ object FilterProcessorFactory {
     class FilterProcessorWithConstructor extends FilterProcessor with FilterProcessorConstructor
     val fps = new FilterProcessorWithConstructor
 
-    fps.addEntityFilter(new GroovyEntityFilter(GlobalConfig.profile.filterFile))
+    fps.addEntityFilter(new GroovyEntityFilter(new File(GlobalConfig.appConfig.filtersFile)))
     fps.addEntityFilter(new EndEntityFilter)
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
-    fps.addUrlFilter(new GroovyUrlFilter(GlobalConfig.profile.filterFile))
+    fps.addUrlFilter(new GroovyUrlFilter(new File(GlobalConfig.appConfig.filtersFile)))
     fps.addUrlFilter(new EndFilter)
     fps
   }
@@ -104,7 +105,7 @@ trait FilterProcessorConstructor extends AbsFilterProcessor {
 object Action extends Enumeration {
 
   type Action = Value
-  val Download, Skip, None= Value
+  val Download, Skip, None = Value
 }
 
 

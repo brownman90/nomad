@@ -14,6 +14,7 @@ import java.lang.Shutdown
 import com.typesafe.config.ConfigFactory
 import com.nevilon.nomad.logs.Logs
 import com.nevilon.nomad.crawler.Master
+import java.io.File
 
 object App extends Logs {
 
@@ -21,13 +22,11 @@ object App extends Logs {
     if (args.isEmpty) {
       throw new Error("missing arguments")
     }
-    val profilePath = args(0)
-    val profile = new Profile(profilePath)
+    val profileDir = args(0)
 
-    val seedReader = new SeedReader(profile.seedFile)
-    GlobalConfig.load(profile.appConfFile)
-    GlobalConfig.profile = profile
+    GlobalConfig.loadProfile(profileDir)
 
+    val seedReader = new SeedReader(new File(GlobalConfig.appConfig.seedFile))
     val master = new Master(seedReader.getSeeds)
 
     /*

@@ -11,74 +11,78 @@
 package com.nevilon.nomad.boot
 
 import com.typesafe.config.{Config, ConfigFactory}
-import java.io.File
 
 object GlobalConfig {
 
-  var profile: Profile = null
-
   private var conf: Config = null
 
-  def load(configFile: File) {
+  private var absProfileDir: String = null
+
+  private def getFullPath(filename: String): String = absProfileDir + "/" + filename
+
+  def loadProfile(profileDir: String) {
     //we need this line because some geniuses think that we will load file only from CLASSPATH
     // or file specified by -Dconfig.file
-    System.setProperty("config.file", configFile.getAbsolutePath)
+    absProfileDir = profileDir
+    System.setProperty("config.file", getFullPath("application.conf"))
     conf = ConfigFactory.load
     conf.checkValid(ConfigFactory.defaultReference())
   }
 
 
   val inMemoryConfig: InMemoryConfig = new InMemoryConfig {
+
     def drop = false
   }
 
   val cassandraConfig: CassandraConfig = new CassandraConfig {
-    def host(): String = conf.getString("storage.titan.backends.cassandra.host")
+    def host: String = conf.getString("storage.titan.backends.cassandra.host")
 
-    def drop(): Boolean = conf.getBoolean("storage.titan.backends.cassandra.drop")
+    def drop: Boolean = conf.getBoolean("storage.titan.backends.cassandra.drop")
 
-    def keyspace(): String = conf.getString("storage.titan.backends.cassandra.keyspace")
-
+    def keyspace: String = conf.getString("storage.titan.backends.cassandra.keyspace")
   }
 
   val berkeleyConfig: BerkeleyConfig = new BerkeleyConfig {
-    def directory(): String = conf.getString("storage.titan.backends.berkeley.directory")
+    def directory: String = conf.getString("storage.titan.backends.berkeley.directory")
 
-    def drop(): Boolean = conf.getBoolean("storage.titan.backends.berkeley.drop")
+    def drop: Boolean = conf.getBoolean("storage.titan.backends.berkeley.drop")
   }
 
   val titanConfig: TitanConfig = new TitanConfig {
 
-    def backend(): String = conf.getString("storage.titan.main_connector")
+    def backend: String = conf.getString("storage.titan.main_connector")
   }
 
   val mongoDBConfig: MongoDBConfig = new MongoDBConfig {
 
-    def dbName(): String = conf.getString("storage.mongo.db_name")
+    def dbName: String = conf.getString("storage.mongo.db_name")
 
-    def host(): String = conf.getString("storage.mongo.host")
+    def host: String = conf.getString("storage.mongo.host")
 
-    def drop(): Boolean = conf.getBoolean("storage.mongo.drop")
+    def drop: Boolean = conf.getBoolean("storage.mongo.drop")
 
-    def port(): Int = conf.getInt("storage.mongo.port")
+    def port: Int = conf.getInt("storage.mongo.port")
   }
 
 
   val linksConfig: LinksConfig = new LinksConfig {
-    def bfsLimit(): Int = conf.getInt("links.bfs_limit")
+    def bfsLimit: Int = conf.getInt("links.bfs_limit")
 
-    def extractedLinksCache(): Int = conf.getInt("links.extracted_links_cache")
+    def extractedLinksCache: Int = conf.getInt("links.extracted_links_cache")
   }
 
 
   val masterConfig: MasterConfig = new MasterConfig {
-    def threadsInWorker(): Int = conf.getInt("master.threads_in_worker")
+    def threadsInWorker: Int = conf.getInt("master.threads_in_worker")
 
-    def workers(): Int = conf.getInt("master.workers")
+    def workers: Int = conf.getInt("master.workers")
   }
 
   val appConfig: AppConfig = new AppConfig {
-    def defaultSeedFile(): String = conf.getString("app.default_seed")
+    def seedFile: String = getFullPath(conf.getString("app.seed_file"))
+
+    def filtersFile: String = getFullPath(conf.getString("app.filters_file"))
   }
 
 
@@ -86,7 +90,9 @@ object GlobalConfig {
 
 trait AppConfig {
 
-  def defaultSeedFile: String
+  def seedFile: String
+
+  def filtersFile: String
 
 }
 
