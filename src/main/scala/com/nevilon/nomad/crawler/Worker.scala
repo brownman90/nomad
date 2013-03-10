@@ -17,6 +17,7 @@ import java.io.{ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
 import com.nevilon.nomad.logs
 import logs.{Logs, Statistics}
+import com.nevilon.nomad.boot.GlobalConfig
 
 
 class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
@@ -33,7 +34,7 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
   private val filterProcessor = FilterProcessorFactory.get(URLUtils.normalize(startUrl))
 
 
-  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads)
+  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads, GlobalConfig.appConfig.userAgent)
 
   private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))

@@ -19,6 +19,7 @@ import org.apache.http.message.BasicHeaderElementIterator
 import org.apache.http.conn.scheme.{PlainSocketFactory, Scheme, SchemeRegistry}
 import org.apache.http.conn.ssl.{TrustStrategy, SSLSocketFactory}
 import java.security.cert
+import org.apache.http.params.CoreProtocolPNames
 
 
 object HttpClientFactory {
@@ -30,7 +31,7 @@ object HttpClientFactory {
   }, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
 
 
-  def buildHttpClient(threadsTotal: Int, threadsPerHost: Int): DefaultHttpClient = {
+  def buildHttpClient(threadsTotal: Int, threadsPerHost: Int, userAgent:String): DefaultHttpClient = {
     //set custom https factory to accept all https certs (self signed and incorrect)
     val schemeRegistry = new SchemeRegistry()
     schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory))
@@ -41,6 +42,7 @@ object HttpClientFactory {
     cm.setDefaultMaxPerRoute(threadsPerHost)
     //build client
     val httpClient: DefaultHttpClient = new DefaultHttpClient(cm)
+    httpClient.getParams().setParameter(CoreProtocolPNames.USER_AGENT, userAgent)
     //active usage of keep-alive
     httpClient.setKeepAliveStrategy(new ConnectionKeepAliveStrategy {
       def getKeepAliveDuration(response: HttpResponse, context: HttpContext): Long = {

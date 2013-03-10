@@ -36,53 +36,55 @@ object GlobalConfig {
   }
 
   val cassandraConfig: CassandraConfig = new CassandraConfig {
-    def host: String = conf.getString("storage.titan.backends.cassandra.host")
+    def host = conf.getString("storage.titan.backends.cassandra.host")
 
-    def drop: Boolean = conf.getBoolean("storage.titan.backends.cassandra.drop")
+    def drop = conf.getBoolean("storage.titan.backends.cassandra.drop")
 
-    def keyspace: String = conf.getString("storage.titan.backends.cassandra.keyspace")
+    def keyspace = conf.getString("storage.titan.backends.cassandra.keyspace")
   }
 
   val berkeleyConfig: BerkeleyConfig = new BerkeleyConfig {
-    def directory: String = conf.getString("storage.titan.backends.berkeley.directory")
+    def directory = conf.getString("storage.titan.backends.berkeley.directory")
 
-    def drop: Boolean = conf.getBoolean("storage.titan.backends.berkeley.drop")
+    def drop = conf.getBoolean("storage.titan.backends.berkeley.drop")
   }
 
   val titanConfig: TitanConfig = new TitanConfig {
 
-    def backend: String = conf.getString("storage.titan.main_connector")
+    def backend = conf.getString("storage.titan.main_connector")
   }
 
   val mongoDBConfig: MongoDBConfig = new MongoDBConfig {
 
-    def dbName: String = conf.getString("storage.mongo.db_name")
+    def dbName = conf.getString("storage.mongo.db_name")
 
-    def host: String = conf.getString("storage.mongo.host")
+    def host = conf.getString("storage.mongo.host")
 
-    def drop: Boolean = conf.getBoolean("storage.mongo.drop")
+    def drop = conf.getBoolean("storage.mongo.drop")
 
-    def port: Int = conf.getInt("storage.mongo.port")
+    def port = conf.getInt("storage.mongo.port")
   }
 
 
   val linksConfig: LinksConfig = new LinksConfig {
-    def bfsLimit: Int = conf.getInt("links.bfs_limit")
+    def bfsLimit = conf.getInt("links.bfs_limit")
 
-    def extractedLinksCache: Int = conf.getInt("links.extracted_links_cache")
+    def extractedLinksCache = conf.getInt("links.extracted_links_cache")
   }
 
 
   val masterConfig: MasterConfig = new MasterConfig {
-    def threadsInWorker: Int = conf.getInt("master.threads_in_worker")
+    def threadsInWorker = conf.getInt("master.threads_in_worker")
 
-    def workers: Int = conf.getInt("master.workers")
+    def workers = conf.getInt("master.workers")
   }
 
   val appConfig: AppConfig = new AppConfig {
-    def seedFile: String = getFullPath(conf.getString("app.seed_file"))
+    def seedFile = getFullPath(conf.getString("app.seed_file"))
 
-    def filtersFile: String = getFullPath(conf.getString("app.filters_file"))
+    def filtersFile = getFullPath(conf.getString("app.filters_file"))
+
+    def userAgent = conf.getString("app.user_agent")
   }
 
 
@@ -93,6 +95,8 @@ trait AppConfig {
   def seedFile: String
 
   def filtersFile: String
+
+  def userAgent: String
 
 }
 
