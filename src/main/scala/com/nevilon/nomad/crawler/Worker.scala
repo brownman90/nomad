@@ -16,28 +16,22 @@ import org.apache.http.HttpEntity
 import java.io.{ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
 import com.nevilon.nomad.logs
-import logs.{Logs, Statistics}
+import logs.{Counter, CounterGroup, Logs, Statistics}
 
 
-class Worker(val domain:Domain,val startUrl: String, val maxThreads: Int,
-             dbService: SynchronizedDBService, contentSaver:ContentSaver,
+class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
+             dbService: SynchronizedDBService, contentSaver: ContentSaver,
              onCrawlingComplete: (Worker) => Unit) extends Logs {
 
 
-  //private val contentSaver = new ContentSaver(dbService)
+  private val cw = new CounterWrapper(domain)
+
   private val linkProvider = new LinkProvider(domain, dbService)
   linkProvider.findOrCreateUrl(URLUtils.normalize(startUrl))
   private val pageDataExtractor = new PageDataExtractor
 
   private val filterProcessor = FilterProcessorFactory.get(URLUtils.normalize(startUrl))
 
-  private val counterGroup = Statistics.createCounterGroup(startUrl)
-
-  private val skippedUrlCounter = counterGroup.createCounter("skipped urls")
-  private val skippedFileCounter = counterGroup.createCounter("skipped files")
-  private val crawledCounter = counterGroup.createCounter("crawled urls")
-  private val errorCounter = counterGroup.createCounter("errors")
-  private val httpErrorCounter = counterGroup.createCounter("http errors")
 
   private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads)
 
@@ -65,7 +59,7 @@ class Worker(val domain:Domain,val startUrl: String, val maxThreads: Int,
 
 
   private def loadAndProcess(url2: Url) {
-    crawledCounter.inc()
+    cw.crawledCounter.inc()
     val url = url2.updateStatus(UrlStatus.IN_PROGRESS)
     dbService.saveOrUpdateUrl(url)
     //drop link here?
@@ -75,12 +69,12 @@ class Worker(val domain:Domain,val startUrl: String, val maxThreads: Int,
     fetcher.onException((e: Exception) => {
       dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.ERROR))
       info("error during crawling " + url.location, e)
-      errorCounter.inc()
+      cw.errorCounter.inc()
     })
     fetcher.onHttpError((code: Int) => {
       dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.HTTP_ERROR))
       info("http error during crawling " + url.location + " error " + code)
-      httpErrorCounter.inc()
+      cw.httpErrorCounter.inc()
     })
 
     fetcher.onFinish(() => {
@@ -116,7 +110,7 @@ class Worker(val domain:Domain,val startUrl: String, val maxThreads: Int,
       } else {
         dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.SKIP))
         info("skipped entity " + url.location)
-        skippedFileCounter.inc()
+        cw.skippedFileCounter.inc()
       }
     })
     fetcher.load()
@@ -142,7 +136,7 @@ class Worker(val domain:Domain,val startUrl: String, val maxThreads: Int,
         action match {
           case Action.Download => UrlStatus.NEW
           case Action.Skip => {
-            skippedUrlCounter.inc()
+            cw.skippedUrlCounter.inc()
             info("skipped url " + relation.to.location)
             UrlStatus.SKIP
           }
@@ -165,6 +159,19 @@ class Worker(val domain:Domain,val startUrl: String, val maxThreads: Int,
     )
     extractedData.relations.foreach(linkProvider.addToExtractedLinks(_))
   }
+
+
+}
+
+class CounterWrapper(domain: Domain) {
+
+  private val counterGroup = Statistics.createCounterGroup(domain.name)
+
+  val skippedUrlCounter = counterGroup.createCounter("skipped urls")
+  val skippedFileCounter = counterGroup.createCounter("skipped files")
+  val crawledCounter = counterGroup.createCounter("crawled urls")
+  val errorCounter = counterGroup.createCounter("errors")
+  val httpErrorCounter = counterGroup.createCounter("http errors")
 
 
 }
