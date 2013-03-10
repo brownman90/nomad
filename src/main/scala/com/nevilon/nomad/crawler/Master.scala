@@ -11,7 +11,7 @@
 package com.nevilon.nomad.crawler
 
 import collection.mutable.ArrayBuffer
-import com.nevilon.nomad.storage.graph.{APIFacade, FileStorage, TitanDBService}
+import com.nevilon.nomad.storage.graph.{SynchronizedDBService, FileStorage}
 import com.nevilon.nomad.logs.Logs
 import collection.mutable
 import com.nevilon.nomad.boot.GlobalConfig
@@ -24,11 +24,13 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private val MAX_THREADS = GlobalConfig.masterConfig.threadsInWorker
   private val NUM_OF_WORKERS = GlobalConfig.masterConfig.workers
 
-  private val apiFacade = new APIFacade
   private val workers = new ArrayBuffer[Worker]
 
-  private val domainInjector = new DomainInjector(apiFacade)
+  private val dbService = new SynchronizedDBService
+  private val domainInjector = new DomainInjector(dbService)
   seeds.foreach(seed => domainInjector.inject(seed))
+
+  private val contentSaver = new ContentSaver(new FileStorage(GlobalConfig.mongoDBConfig))
 
   def startCrawling() {
     //clear statuses for domains and urls
@@ -38,15 +40,15 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   }
 
   private def loadWorkers() {
-    val domainsIt = apiFacade.getDomainWithStatus(DomainStatus.NEW)
+    val domainsIt = dbService.getDomainWithStatus(DomainStatus.NEW)
     while (domainsIt.nonEmpty && workers.size < NUM_OF_WORKERS) {
       // add flag for stop
       val domain = domainsIt.next()
-      val urlsToCrawl = apiFacade.getLinksToCrawl(domain, 1)
+      val urlsToCrawl = dbService.getLinksToCrawl(domain, 1)
       if (urlsToCrawl.nonEmpty) {
-        apiFacade.updateDomain(domain.updateStatus(DomainStatus.IN_PROGRESS))
+        dbService.updateDomain(domain.updateStatus(DomainStatus.IN_PROGRESS))
         val worker: Worker = new Worker(domain, urlsToCrawl.last.location, MAX_THREADS,
-          apiFacade, (worker: Worker) => onCrawlingComplete(worker))
+          dbService, contentSaver, (worker: Worker) => onCrawlingComplete(worker))
         workers += worker
       } else {
         info("none links to crawl for domain " + domain.name)
@@ -68,7 +70,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private def onCrawlingComplete(worker: Worker) {
     info("I'm dead! " + worker.startUrl)
     worker.stop(false)
-    apiFacade.updateDomain(worker.domain.updateStatus(DomainStatus.COMPLETE))
+    dbService.updateDomain(worker.domain.updateStatus(DomainStatus.COMPLETE))
     workers -= worker
     loadWorkers()
     if (workers.isEmpty) {

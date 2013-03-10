@@ -16,14 +16,13 @@ import java.io.InputStream
 import com.nevilon.nomad.boot.{GlobalConfig, MongoDBConfig}
 
 
-trait FileStorage {
+class FileStorage(val mongoDBConf: MongoDBConfig) {
   /*
      what about autoclean param on each start?
      check for file existence?
 
    */
 
-  private val conf = GlobalConfig.mongoDBConfig
 
   private var mongoClient: MongoClient = null
   private var gridfs: GridFS = null
@@ -36,11 +35,11 @@ trait FileStorage {
   def getGridFS() = gridfs
 
   private def connect() {
-    mongoClient = MongoClient(conf.host, conf.port)
-    if (conf.drop) {
-      mongoClient.dropDatabase(conf.dbName)
+    mongoClient = MongoClient(mongoDBConf.host, mongoDBConf.port)
+    if (mongoDBConf.drop) {
+      mongoClient.dropDatabase(mongoDBConf.dbName)
     }
-    mongoDB = mongoClient(conf.dbName)
+    mongoDB = mongoClient(mongoDBConf.dbName)
     gridfs = GridFS(mongoDB)
   }
 
