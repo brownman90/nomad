@@ -65,7 +65,7 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
             val superNodeVertex = getSuperDomainNodeInTx
             val domainVertex = tx.addVertex()
             domainVertex.setProperty(GraphProperties.Domain.nameProperty, domain.name)
-            domainVertex.setProperty(GraphProperties.Domain.statusProperty, domain.status)
+            domainVertex.setProperty(GraphProperties.Domain.statusProperty, domain.status.toString)
             tx.addEdge("", superNodeVertex, domainVertex, GraphProperties.Domain.urlEdgeLabel)
           }
         }
