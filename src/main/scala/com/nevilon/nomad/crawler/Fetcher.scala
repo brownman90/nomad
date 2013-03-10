@@ -61,21 +61,12 @@ class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
     }
   }
 
-  def onDataStream(handler: (EntityParams, HttpEntity, Url) => Unit) {
-    onDataStreamHandler = handler
+  def onDataStream(handler: (EntityParams, HttpEntity, Url) => Unit) = onDataStreamHandler = handler
 
-  }
+  def onHttpError(handler: (Int) => Unit) = onHttpErrorHandler = handler
 
-  def onHttpError(handler: (Int) => Unit) {
-    onHttpErrorHandler = handler
-  }
+  def onException(handler: (Exception) => Unit) = onExceptionHandler = handler
 
-  def onException(handler: (Exception) => Unit) {
-    onExceptionHandler = handler
-  }
-
-  def onFinish(handler: () => Unit) {
-    onFinishHandler = handler
-  }
+  def onFinish(handler: () => Unit) = onFinishHandler = handler
 
 }
