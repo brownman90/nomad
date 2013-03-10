@@ -2,6 +2,7 @@ package com.nevilon.nomad.crawler
 
 import com.nevilon.nomad.storage.graph.{SynchronizedDBService, DomainService}
 import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
+import com.tinkerpop.blueprints.Element
 
 /**
  * Created with IntelliJ IDEA.
@@ -9,51 +10,26 @@ import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
  * Date: 3/8/13
  * Time: 12:04 PM
  */
-class DomainProvider(dbService: SynchronizedDBService) {
 
-  def add(domain: Domain) {
-    dbService.createDomainIfNeeded(domain)
-  }
+class DomainInjector(dbService: SynchronizedDBService) {
 
-  def get() {
-    dbService.getDomainWithStatus(DomainStatus.NEW)
-  }
+  def inject(url: String) {
+    val normalizedUrl = URLUtils.normalize(url)
+    val domainStr = URLUtils.getDomainName(normalizedUrl)
+    dbService.createDomainIfNeeded(new Domain(domainStr, DomainStatus.NEW))
+    dbService.getUrl(normalizedUrl) match {
+      case None => {
+        dbService.saveOrUpdateUrl(new Url(normalizedUrl, UrlStatus.NEW))
+        dbService.addUrlToDomain(normalizedUrl)
+      }
+      case Some(v) => //should exists
+    }
 
-  def updateDomain(domain: Domain) {
-    dbService.updateDomain(domain)
-  }
 
-}
-
-class Domain(val name: String, val status: DomainStatus.Value) {
-
-  def updateStatus(newStatus: DomainStatus.Value): Domain = new Domain(name, newStatus)
-
-  override def equals(obj: Any): Boolean = {
-    if (obj.isInstanceOf[Domain]) {
-      val other = obj.asInstanceOf[Domain]
-      new EqualsBuilder()
-        .append(name, other.name)
-        .isEquals
-    } else false
-  }
-
-  override def hashCode(): Int = {
-    new HashCodeBuilder()
-      .append(name)
-      .toHashCode
   }
 
 }
 
-class DomainStatus
-
-object DomainStatus extends Enumeration {
-
-  val IN_PROGRESS = Value("IN_PROGRESS")
-  val COMPLETE = Value("COMPLETE")
-  val NEW = Value("NEW")
-  val SKIP = Value("SKIP")
 
 
-}
+

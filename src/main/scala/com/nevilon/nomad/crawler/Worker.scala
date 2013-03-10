@@ -19,12 +19,9 @@ import com.nevilon.nomad.logs
 import logs.{Logs, Statistics}
 
 
-class Worker(val startUrl: String, val maxThreads: Int,
+class Worker(val domain:Domain,val startUrl: String, val maxThreads: Int,
              dbService: APIFacade,
              onCrawlingComplete: (Worker) => Unit) extends Logs {
-
-  private val domain = new Domain(URLUtils.getDomainName(URLUtils.normalize(startUrl)), DomainStatus.NEW)
-  dbService.createDomainIfNeeded(domain)
 
 
   private val contentSaver = new ContentSaver(dbService)

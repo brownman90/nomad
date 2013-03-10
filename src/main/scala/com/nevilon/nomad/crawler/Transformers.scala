@@ -30,7 +30,7 @@ object Transformers {
 
   implicit def vertex2Domain(element: Element): Domain = {
     val status = DomainStatus.withName(element.getProperty("status"))
-    new Domain(element.getProperty("name"), status)
+    new Domain(element.getProperty("domain"), status)
   }
 
 }

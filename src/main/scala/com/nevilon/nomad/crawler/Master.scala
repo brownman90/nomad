@@ -27,19 +27,30 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private val apiFacade = new APIFacade
   private val workers = new ArrayBuffer[Worker]
 
+  private val domainInjector = new DomainInjector(apiFacade)
+  seeds.foreach(seed => domainInjector.inject(seed))
 
   def startCrawling() {
+    //clear statuses for domains and urls
     startPrinting()
     info("start workers")
-    loadWatchers()
+    loadWorkers()
   }
 
-  private def loadWatchers() {
-    while (seedsQueue.nonEmpty && workers.size < NUM_OF_WORKERS) {
+  private def loadWorkers() {
+    val domainsIt = apiFacade.getDomainWithStatus(DomainStatus.NEW)
+    while (domainsIt.nonEmpty && workers.size < NUM_OF_WORKERS) {
       // add flag for stop
-      val worker: Worker = new Worker(seedsQueue.dequeue(), MAX_THREADS,
-        apiFacade, (worker: Worker) => onCrawlingComplete(worker))
-      workers += worker
+      val domain = domainsIt.next()
+      val urlsToCrawl = apiFacade.getLinksToCrawl(domain, 1)
+      if (urlsToCrawl.nonEmpty) {
+        apiFacade.updateDomain(domain.updateStatus(DomainStatus.IN_PROGRESS))
+        val worker: Worker = new Worker(domain, urlsToCrawl.last.location, MAX_THREADS,
+          apiFacade, (worker: Worker) => onCrawlingComplete(worker))
+        workers += worker
+      } else {
+        info("none links to crawl for domain " + domain.name)
+      }
     }
   }
 
@@ -57,7 +68,9 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private def onCrawlingComplete(worker: Worker) {
     info("I'm dead! " + worker.startUrl)
     worker.stop(false)
+    apiFacade.updateDomain(worker.domain.updateStatus(DomainStatus.COMPLETE))
     workers -= worker
+    loadWorkers()
     if (workers.isEmpty) {
       stopPrinting()
     }

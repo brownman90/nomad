@@ -24,7 +24,8 @@ class UrlService(implicit graph: TitanGraph) extends TransactionSupport {
   }
 
 
-  def getUrl(url: String): Option[Vertex] = {
+  //TODO return Url, not raw vertex
+  def getUrl(url: String): Option[Vertex] =  {
     withTransaction[Option[Vertex]] {
       implicit tx =>
         getUrlInTx(url)

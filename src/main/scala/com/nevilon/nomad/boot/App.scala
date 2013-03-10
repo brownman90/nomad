@@ -27,6 +27,7 @@ object App extends Logs {
     GlobalConfig.loadProfile(profileDir)
 
     val seedReader = new SeedReader(new File(GlobalConfig.appConfig.seedFile))
+
     val master = new Master(seedReader.getSeeds)
 
     /*
