@@ -69,7 +69,7 @@ class SynchronizedDBService {
   }
 
 
-  def getDomainWithStatus(domainStatus: DomainStatus.Value): Iterator[Domain] = synchronized {
+  def getDomainWithStatus(domainStatus: DomainStatus.Value): Option[Domain] = synchronized {
     titanDBService.domainService.getDomainWithStatus(domainStatus)
   }
 

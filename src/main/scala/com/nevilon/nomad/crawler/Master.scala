@@ -33,43 +33,56 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private val contentSaver = new ContentSaver(new FileStorage(GlobalConfig.mongoDBConfig))
 
   def startCrawling() {
-    //clear statuses for domains and urls
+    val domainsIt = buildDomainIterator(DomainStatus.IN_PROGRESS)
+    domainsIt.foreach(domain => {
+      dbService.updateDomain(domain.get.updateStatus(DomainStatus.NEW))
+    })
     startPrinting()
     info("start workers")
     loadWorkers()
   }
 
+
+  private def buildDomainIterator(domainStatus: DomainStatus.Value) = {
+    def hasMore(domain: Option[Domain]): Boolean = {
+      domain match {
+        case None => false
+        case _ => true
+      }
+    }
+    Iterator.continually(dbService.getDomainWithStatus(domainStatus)).takeWhile(domain => hasMore(domain))
+  }
+
   private def loadWorkers() {
-    val domainsIt = dbService.getDomainWithStatus(DomainStatus.NEW)
-    while (domainsIt.nonEmpty && workers.size < NUM_OF_WORKERS) {
-      // add flag for stop
-      val domain = domainsIt.next()
+    val domainIt = buildDomainIterator(DomainStatus.NEW)
+    for {
+      domainOpt: Option[Domain] <- domainIt
+      domain = domainOpt.get
+      if (workers.size < NUM_OF_WORKERS)
+    } {
+      dbService.updateDomain(domain.updateStatus(DomainStatus.IN_PROGRESS))
       val urlsToCrawl = dbService.getLinksToCrawl(domain, 1)
       if (urlsToCrawl.nonEmpty) {
         dbService.updateDomain(domain.updateStatus(DomainStatus.IN_PROGRESS))
         val worker: Worker = new Worker(domain, urlsToCrawl.last.location, MAX_THREADS,
-          dbService, contentSaver, (worker: Worker) => onCrawlingComplete(worker))
+          dbService, contentSaver, (worker: Worker) => onWorkerStop(worker))
         workers += worker
-      } else {
-        info("none links to crawl for domain " + domain.name)
-      }
+        dbService.updateDomain(domain.updateStatus(DomainStatus.IN_PROGRESS))
+      } else info("none links to crawl for domain " + domain.name)
     }
   }
 
 
-  def isComplete: Boolean = {
-    workers.foreach(w => println(w.startUrl))
-    workers.isEmpty
-  }
+  def isMasterStopped = workers.isEmpty
 
-  def stop() {
+  def sendStopCommand() {
     info("send stop command, workers: " + workers.size)
     workers.foreach(w => w.stop(true))
   }
 
-  private def onCrawlingComplete(worker: Worker) {
+  private def onWorkerStop(worker: Worker) {
     info("I'm dead! " + worker.startUrl)
-    worker.stop(false)
+    worker.stop(false) //wtf?
     dbService.updateDomain(worker.domain.updateStatus(DomainStatus.COMPLETE))
     workers -= worker
     loadWorkers()

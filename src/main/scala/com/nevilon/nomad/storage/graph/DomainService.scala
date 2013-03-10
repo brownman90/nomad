@@ -36,13 +36,15 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
     }
   }
 
-  def getDomainWithStatus(domainStatus: DomainStatus.Value): Iterator[Domain] = {
+  def getDomainWithStatus(domainStatus: DomainStatus.Value): Option[Domain] = {
     withTransaction {
       implicit tx => {
         val superNodeVertex = getSuperDomainNodeInTx
-        val it = superNodeVertex.getVertices(Direction.OUT).iterator()
-        for (v <- it.seq if v.getProperty(GraphProperties.Domain.statusProperty).toString == DomainStatus.NEW.toString)
-        yield Transformers.vertex2Domain(v)
+        val pipe = new GremlinPipeline(superNodeVertex). //.outE(GraphProperties.Domain.urlEdgeLabel).
+          outE(GraphProperties.Domain.urlEdgeLabel).inV().has(GraphProperties.Domain.statusProperty, domainStatus.toString).range(0, 0)
+        if (pipe.iterator().nonEmpty) {
+          Some(Transformers.vertex2Domain(pipe.iterator().next()))
+        } else None
       }
     }
   }
