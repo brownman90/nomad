@@ -11,7 +11,6 @@
 package com.nevilon.nomad.crawler
 
 import java.net.URI
-import org.apache.log4j.LogManager
 import org.apache.commons.httpclient.util.URIUtil
 import com.nevilon.nomad.logs.Logs
 

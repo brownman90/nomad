@@ -11,8 +11,7 @@
 package com.nevillon.nomad
 
 
-import org.junit.{Assert, Test}
-import com.nevilon.nomad.crawler.URLUtils
+import org.junit.Test
 
 
 class SyncTraitTest {

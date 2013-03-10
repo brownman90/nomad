@@ -10,11 +10,6 @@
  */
 package com.nevillon.nomad
 
-import org.junit.Test
-import groovy.lang.{GroovyClassLoader, GroovyObject}
-import java.io.File
-import collection.mutable.ListBuffer
-
 
 class GroovyTest {
 //

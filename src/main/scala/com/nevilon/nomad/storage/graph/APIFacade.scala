@@ -10,18 +10,6 @@
  */
 package com.nevilon.nomad.storage.graph
 
-import com.mongodb.casbah.Imports._
-import collection.mutable.ListBuffer
-import org.joda.time.DateTime
-import java.io.InputStream
-import com.nevilon.nomad.crawler.{Url, Transformers}
-import com.nevilon.nomad.utils.StringGenerator
-import com.tinkerpop.blueprints.Direction
-
-import scala.collection.JavaConversions._
-import java.nio.file.{FileSystems, Files}
-import com.nevilon.nomad.boot.GlobalConfig
-
 
 /*
 We do not track files with the same hash here!

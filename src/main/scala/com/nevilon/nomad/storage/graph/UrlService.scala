@@ -14,7 +14,6 @@ import com.thinkaurelius.titan.core.{TitanTransaction, TitanGraph}
 import com.nevilon.nomad.crawler.{Transformers, Url}
 import com.tinkerpop.blueprints.Vertex
 
-import scala.collection.JavaConversions._
 
 class UrlService(implicit graph: TitanGraph) extends TransactionSupport {
 

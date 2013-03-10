@@ -15,11 +15,9 @@ import com.nevilon.nomad._
 import boot.GlobalConfig
 import com.tinkerpop.blueprints.Vertex
 import crawler._
-import java.util.UUID
 import logs.Logs
 import scala.Predef.String
 
-import scala.Some
 import collection.mutable
 import scala.Some
 

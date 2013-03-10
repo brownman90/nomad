@@ -13,7 +13,7 @@ package com.nevilon.nomad.storage.graph
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.Imports._
 import java.io.InputStream
-import com.nevilon.nomad.boot.{GlobalConfig, MongoDBConfig}
+import com.nevilon.nomad.boot.MongoDBConfig
 
 
 class FileStorage(val mongoDBConf: MongoDBConfig) {

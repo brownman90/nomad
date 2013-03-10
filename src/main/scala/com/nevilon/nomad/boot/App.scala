@@ -10,8 +10,6 @@
  */
 package com.nevilon.nomad.boot
 
-import java.lang.Shutdown
-import com.typesafe.config.ConfigFactory
 import com.nevilon.nomad.logs.Logs
 import com.nevilon.nomad.crawler.Master
 import java.io.File

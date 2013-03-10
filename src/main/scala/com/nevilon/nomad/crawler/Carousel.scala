@@ -15,7 +15,6 @@ import concurrent._
 import scala.util.Try
 import scala.Some
 import collection.mutable
-import java.io.FileWriter
 
 class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 

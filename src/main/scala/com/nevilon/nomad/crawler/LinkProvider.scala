@@ -12,7 +12,7 @@ package com.nevilon.nomad.crawler
 
 import collection.mutable.ListBuffer
 import collection.mutable
-import com.nevilon.nomad.storage.graph.{SynchronizedDBService, TitanDBService}
+import com.nevilon.nomad.storage.graph.SynchronizedDBService
 import com.nevilon.nomad.logs.Logs
 import com.nevilon.nomad.boot.GlobalConfig
 

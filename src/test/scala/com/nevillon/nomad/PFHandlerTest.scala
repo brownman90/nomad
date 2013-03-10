@@ -10,7 +10,7 @@
  */
 package com.nevillon.nomad
 
-import org.junit.{Assert, Test}
+import org.junit.Test
 
 class PFHandlerTest {
 

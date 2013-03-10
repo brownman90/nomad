@@ -10,7 +10,7 @@
  */
 package com.nevilon.nomad.crawler
 
-import com.tinkerpop.blueprints.{Element, Vertex}
+import com.tinkerpop.blueprints.Element
 import com.nevilon.nomad.storage.graph.GraphProperties
 
 

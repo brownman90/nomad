@@ -16,7 +16,7 @@ import org.apache.http.HttpEntity
 import java.io.{ByteArrayInputStream, InputStream}
 import org.apache.http.util.EntityUtils
 import com.nevilon.nomad.logs
-import logs.{Counter, CounterGroup, Logs, Statistics}
+import logs.{Logs, Statistics}
 
 
 class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,

@@ -12,7 +12,6 @@ package com.nevilon.nomad.filter
 
 import groovy.lang.{GroovyObject, GroovyClassLoader}
 import java.io.File
-import collection.mutable.ListBuffer
 import com.nevilon.nomad.crawler.EntityParams
 
 

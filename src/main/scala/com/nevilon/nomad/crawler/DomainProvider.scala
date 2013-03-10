@@ -10,9 +10,7 @@
  */
 package com.nevilon.nomad.crawler
 
-import com.nevilon.nomad.storage.graph.{SynchronizedDBService, DomainService}
-import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
-import com.tinkerpop.blueprints.Element
+import com.nevilon.nomad.storage.graph.SynchronizedDBService
 
 
 class DomainInjector(dbService: SynchronizedDBService) {

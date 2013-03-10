@@ -12,7 +12,7 @@ package com.nevilon.nomad.storage.graph
 
 import com.thinkaurelius.titan.core.{TitanTransaction, TitanGraph}
 import com.nevilon.nomad.crawler._
-import com.tinkerpop.blueprints.{Direction, Vertex, Element}
+import com.tinkerpop.blueprints.{Direction, Vertex}
 import com.tinkerpop.gremlin.java.GremlinPipeline
 import collection.mutable.ListBuffer
 
