@@ -16,31 +16,40 @@ import java.io.File
 
 object App extends Logs {
 
+  private case class Config(path: String = "")
+
   def main(args: Array[String]) {
-    if (args.isEmpty) {
-      throw new Error("missing arguments")
+    val parser = new scopt.immutable.OptionParser[Config]("nomad", "0.4.x") {
+      def options = Seq(
+        arg("<path>", "path to profile dir, for example profiles/template/") {
+          (v: String, c: Config) => c.copy(path = v)
+        }
+      )
     }
-    val profileDir = args(0)
+    parser.parse(args, Config()) map {
+      config =>
+        GlobalConfig.loadProfile(config.path)
+        val seedReader = new SeedReader(new File(GlobalConfig.appConfig.seedFile))
+        val master = new Master(seedReader.getSeeds)
 
-    GlobalConfig.loadProfile(profileDir)
+        /*
+        sys.ShutdownHookThread {
+          master.stop()
+          while (!master.isComplete) {
+            info("waiting for completion")
+            Thread.sleep(5000)
+          }
 
-    val seedReader = new SeedReader(new File(GlobalConfig.appConfig.seedFile))
+          info("done")
+        }
+        */
 
-    val master = new Master(seedReader.getSeeds)
+        master.startCrawling()
 
-    /*
-    sys.ShutdownHookThread {
-      master.stop()
-      while (!master.isComplete) {
-        info("waiting for completion")
-        Thread.sleep(5000)
-      }
-
-      info("done")
+      // do stuff
+    } getOrElse {
+      // arguments are bad, usage message will have been displayed
     }
-    */
-
-    master.startCrawling()
   }
 
 

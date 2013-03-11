@@ -11,6 +11,7 @@
 package com.nevilon.nomad.boot
 
 import com.typesafe.config.{Config, ConfigFactory}
+import java.io.File
 
 object GlobalConfig {
 
@@ -21,10 +22,14 @@ object GlobalConfig {
   private def getFullPath(filename: String): String = absProfileDir + "/" + filename
 
   def loadProfile(profileDir: String) {
+    absProfileDir = profileDir
+    val appConfFullPath = getFullPath("application.conf")
+    if (!new File(appConfFullPath).exists()) {
+      throw new Error("cannot load application.conf from " + appConfFullPath)
+    }
     //we need this line because some geniuses think that we will load file only from CLASSPATH
     // or file specified by -Dconfig.file
-    absProfileDir = profileDir
-    System.setProperty("config.file", getFullPath("application.conf"))
+    System.setProperty("config.file", appConfFullPath)
     conf = ConfigFactory.load
     conf.checkValid(ConfigFactory.defaultReference())
   }
