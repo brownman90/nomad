@@ -25,55 +25,18 @@ import scala.Some
 
 class TitanDBService extends TransactionSupport with Logs {
 
-  private val conf = GlobalConfig
-
-  private val connector =
-    conf.titanConfig.backend match {
-      case "cassandra" => new CassandraGraphStorageConnector(conf.cassandraConfig)
-      case "inmemory" => new InMemoryGraphStorageConnector(conf.inMemoryConfig)
-      case "berkeley" => new BerkeleyGraphStorageConnector(conf.berkeleyConfig)
-      case _ => {
-        error("wrong backend configuration")
-        throw new Error
-      }
-    }
-  private implicit val graph = connector.getGraph
+  private val connectorSelector = new ConnectorSelector
+  private implicit val graph = connectorSelector.graph
 
   val urlService = new UrlService
   val domainService = new DomainService
   domainService.createSuperDomainIfNeeded
 
-  def shutdown() {
-    connector.shutdown()
-  }
 
+  def shutdown() =connectorSelector.shutdown()
 
-  class Cache[T](load: (T) => Option[Vertex], create: (T) => Option[Vertex]) {
-
-    private val cache = new mutable.HashMap[T, Vertex]
-
-    def getOrElse(key: T): Option[Vertex] = {
-      cache.get(key) match {
-        case None => {
-          load(key) match {
-            case None => create(key)
-            case Some(v) => {
-              cache.put(key, v)
-              Some(v)
-            }
-          }
-        }
-        case Some(v) => {
-          Some(v)
-        }
-      }
-    }
-
-  }
 
   def linkUrls(relations: List[Relation]) {
-
-
     withTransaction {
       implicit tx => {
         val urlCache = new Cache[Url]((url) => {
@@ -88,35 +51,35 @@ class TitanDBService extends TransactionSupport with Logs {
 
         val isLinkedCache = new mutable.HashSet[String]
 
-        var firstTime = 0l
-        var secondTime = 0l
+        //var firstTime = 0l
+        //var secondTime = 0l
 
         implicit val superNode = domainService.getSuperDomainNodeInTx
         relations.foreach(relation => {
-          var startTime = System.currentTimeMillis()
+          //   var startTime = System.currentTimeMillis()
           val parentPage = urlCache.getOrElse(relation.from).get //getOrCreate(relation.from)
           val childPage = urlCache.getOrElse(relation.to).get //getOrCreate(relation.to)
           tx.addEdge("", parentPage, childPage, "relation")
-          var endTime = System.currentTimeMillis()
-          firstTime = firstTime + (endTime - startTime)
+          //var endTime = System.currentTimeMillis()
+          // firstTime = firstTime + (endTime - startTime)
 
           val newChildUrl: Url = Transformers.vertex2Url(childPage)
 
           val domainName = URLUtils.getDomainName(URLUtils.normalize(URLUtils.getDomainName(newChildUrl.location)))
           val domain = new Domain(domainName, DomainStatus.NEW)
           domainCache.getOrElse(domain).get //getOrCreateDomain(domain)
-          startTime = System.currentTimeMillis()
+          // startTime = System.currentTimeMillis()
           if (newChildUrl.status == UrlStatus.NEW && !isLinkedCache.contains(newChildUrl.location) &&
             !domainService.isUrlLinkedToDomainInTx(newChildUrl)) {
             domainService.addUrlToDomainInTx(domain, childPage)
             isLinkedCache.add(newChildUrl.location)
           }
-          endTime = System.currentTimeMillis()
-          secondTime = secondTime + (endTime - startTime)
+          // endTime = System.currentTimeMillis()
+          // secondTime = secondTime + (endTime - startTime)
 
         })
-        println("firstTime " + firstTime)
-        println("secondTime " + secondTime)
+        //    println("firstTime " + firstTime)
+        //   println("secondTime " + secondTime)
       }
     }
   }

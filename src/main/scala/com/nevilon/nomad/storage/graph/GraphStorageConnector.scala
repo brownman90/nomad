@@ -13,7 +13,7 @@ package com.nevilon.nomad.storage.graph
 import com.thinkaurelius.titan.core.{TitanFactory, TitanGraph}
 import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion
-import com.nevilon.nomad.boot.{GraphStorageConfig, InMemoryConfig, BerkeleyConfig, CassandraConfig}
+import com.nevilon.nomad.boot._
 import org.apache.cassandra.thrift.Cassandra
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TFramedTransport, TSocket}
@@ -21,6 +21,31 @@ import com.nevilon.nomad.logs.Logs
 import java.io.File
 import org.apache.commons.io.FileUtils
 import scala.collection.JavaConversions._
+
+
+class ConnectorSelector extends Logs {
+
+  private val conf = GlobalConfig
+
+  private val connector =
+    conf.titanConfig.backend match {
+      case "cassandra" => new CassandraGraphStorageConnector(conf.cassandraConfig)
+      case "inmemory" => new InMemoryGraphStorageConnector(conf.inMemoryConfig)
+      case "berkeley" => new BerkeleyGraphStorageConnector(conf.berkeleyConfig)
+      case _ => {
+        error("wrong backend configuration")
+        throw new Error
+      }
+    }
+
+  def shutdown() {
+    connector.shutdown()
+  }
+
+  lazy val graph = connector.getGraph
+
+}
+
 
 abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs {
 
