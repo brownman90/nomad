@@ -34,7 +34,7 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
   private val filterProcessor = FilterProcessorFactory.get(URLUtils.normalize(startUrl))
 
 
-  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads, GlobalConfig.appConfig.userAgent)
+  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads, UserAgentProvider.getUserAgentString())
 
   private val carousel = new Carousel(maxThreads, linkProvider)
   carousel.setOnStart((url: Url) => loadAndProcess(url))

@@ -89,7 +89,14 @@ object GlobalConfig {
 
     def filtersFile = getFullPath(conf.getString("app.filters_file"))
 
-    def userAgent = conf.getString("app.user_agent")
+  }
+
+  val userAgentConfig: UserAgentConfig = new UserAgentConfig {
+    def name: String = conf.getString("user_agent.name")
+
+    def page: String = conf.getString("user_agent.page")
+
+    def email: String = conf.getString("user_agent.email")
   }
 
 
@@ -100,8 +107,6 @@ trait AppConfig {
   def seedFile: String
 
   def filtersFile: String
-
-  def userAgent: String
 
 }
 
@@ -163,8 +168,12 @@ trait TitanConfig {
 }
 
 
-trait ConfigProvider {
+trait UserAgentConfig {
 
-  val config = GlobalConfig
+  def name: String
+
+  def email: String
+
+  def page: String
 
 }

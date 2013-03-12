@@ -13,24 +13,15 @@ package com.nevilon.nomad.filter
 import java.net.URL
 import crawlercommons.robots.{RobotUtils, SimpleRobotRulesParser}
 import crawlercommons.fetcher.UserAgent
+import com.nevilon.nomad.crawler.UserAgentProvider
 
 class RobotsUrlFilter(domain: String) extends Filter[String] {
 
-  //set the same user agent for http client
-  object RobotsConfig {
+  private val ROBOTS_TXT_LOCATION = "/robots.txt"
 
-    //create page, use real email
-    //move to GlobalConfig
-    val ROBOTS_TXT = "/robots.txt"
-    val CRAWLER_NAME = "nomad"
-    val CRAWLER_EMAIL = "nomad@nevilon.com"
-    val CRAWLER_PAGE = "http://www.nevilon.com"
-
-  }
-
-  private val robotsUrl = new URL(domain + RobotsConfig.ROBOTS_TXT)
+  private val robotsUrl = new URL(domain + ROBOTS_TXT_LOCATION)
   private val parser = new SimpleRobotRulesParser()
-  private val userAgent = new UserAgent(RobotsConfig.CRAWLER_NAME, RobotsConfig.CRAWLER_EMAIL, RobotsConfig.CRAWLER_PAGE)
+  private val userAgent = UserAgentProvider.getUserAgent()
   private val fetcher = RobotUtils.createFetcher(userAgent, 1)
   private val rules = RobotUtils.getRobotRules(fetcher, parser, robotsUrl)
 
