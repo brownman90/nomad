@@ -12,9 +12,10 @@ package com.nevilon.nomad.crawler
 
 import collection.mutable.ArrayBuffer
 import com.nevilon.nomad.storage.graph.{SynchronizedDBService, FileStorage}
-import com.nevilon.nomad.logs.Logs
+import com.nevilon.nomad.logs.{Statistics, Logs}
 import collection.mutable
 import com.nevilon.nomad.boot.GlobalConfig
+import java.util.{TimerTask, Timer}
 
 class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs {
 
@@ -40,6 +41,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
     startPrinting()
     info("start workers")
     loadWorkers()
+    new LoadNewDomainsTimer().startPrinting()
   }
 
 
@@ -53,7 +55,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
     Iterator.continually(dbService.getDomainWithStatus(domainStatus)).takeWhile(domain => hasMore(domain))
   }
 
-  private def loadWorkers() {
+  private def loadWorkers() = synchronized {
     val domainIt = buildDomainIterator(DomainStatus.NEW)
     for {
       domainOpt: Option[Domain] <- domainIt
@@ -89,6 +91,31 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
     if (workers.isEmpty) {
       stopPrinting()
     }
+  }
+
+
+  class LoadNewDomainsTimer {
+
+    private val timer = new Timer()
+
+    private val timerTask = new TimerTask {
+      def run() {
+        val it = buildDomainIterator(DomainStatus.NEW)
+//        it.foreach(d => println(d.get.name))
+
+        loadWorkers()
+      }
+    }
+
+
+    def startPrinting() {
+      timer.schedule(timerTask, 0, 30000)
+    }
+
+    def stopPrinting() {
+      timer.cancel()
+    }
+
   }
 
 
