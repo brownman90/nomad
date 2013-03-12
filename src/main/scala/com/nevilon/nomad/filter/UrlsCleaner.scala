@@ -26,8 +26,8 @@ class UrlsCleaner extends Logs {
     val withoutIncorrect = removeIncorrectUrls(linksToClear)
     val normalized = normalizeUrls(withoutIncorrect)
     val withoutSelfUrls = removeSelfUrls(normalized)
-    val withoutUrlsToAnotherDomain = removeUrlsToAnotherDomain(withoutSelfUrls, startUrl)
-    val withoutDuplicates = removeDuplicateUrls(withoutUrlsToAnotherDomain)
+    //val withoutUrlsToAnotherDomain = removeUrlsToAnotherDomain(withoutSelfUrls, startUrl)
+    val withoutDuplicates = removeDuplicateUrls(withoutSelfUrls)
     withoutDuplicates
   }
 

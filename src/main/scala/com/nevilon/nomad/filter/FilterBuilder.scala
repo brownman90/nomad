@@ -29,12 +29,15 @@ object FilterProcessorFactory {
     class FilterProcessorWithConstructor extends FilterProcessor with FilterProcessorConstructor
     val fps = new FilterProcessorWithConstructor
 
+    fps.addDomainFilter(new GroovyDomainFilter(new File(GlobalConfig.appConfig.filtersFile)))
+    fps.addDomainFilter(new EndCoolFilter[String])
+
     fps.addEntityFilter(new GroovyEntityFilter(new File(GlobalConfig.appConfig.filtersFile)))
-    fps.addEntityFilter(new EndEntityFilter)
+    fps.addEntityFilter(new EndCoolFilter[EntityParams])
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
     fps.addUrlFilter(new GroovyUrlFilter(new File(GlobalConfig.appConfig.filtersFile)))
-    fps.addUrlFilter(new EndFilter)
+    fps.addUrlFilter(new EndCoolFilter[String])
     fps
   }
 
@@ -45,16 +48,11 @@ class FilterProcessor extends AbsFilterProcessor {
 
   import Action._
 
+  def filterUrl(url: String) = urlFilterSet.filter(url)
 
-  def filterUrl(url: String): Action = {
-    urlFilterSet.filter(url)
-  }
+  def filterEntity(entityParams: EntityParams) = entityFilterSet.filter(entityParams)
 
-  def filterEntity(entityParams: EntityParams): Action = {
-    entityFilterSet.filter(entityParams)
-  }
-
-
+  def filterDomain(domain: String) = domainFilterSet.filter(domain)
 }
 
 class FilterSet[T] {
@@ -86,18 +84,17 @@ class AbsFilterProcessor {
 
   protected var urlFilterSet = new FilterSet[String]
   protected var entityFilterSet = new FilterSet[EntityParams]
+  protected var domainFilterSet = new FilterSet[String]
 
 }
 
 trait FilterProcessorConstructor extends AbsFilterProcessor {
 
-  def addUrlFilter(urlFilter: Filter[String]) {
-    urlFilterSet.addFilter(urlFilter)
-  }
+  def addDomainFilter(domainFilter: Filter[String]) = domainFilterSet.addFilter(domainFilter)
 
-  def addEntityFilter(entityFilter: Filter[EntityParams]) {
-    entityFilterSet.addFilter(entityFilter)
-  }
+  def addUrlFilter(urlFilter: Filter[String]) = urlFilterSet.addFilter(urlFilter)
+
+  def addEntityFilter(entityFilter: Filter[EntityParams]) = entityFilterSet.addFilter(entityFilter)
 
 }
 

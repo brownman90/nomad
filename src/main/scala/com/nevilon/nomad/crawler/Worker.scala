@@ -126,11 +126,27 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
       new Relation(url, new Url(item.url, UrlStatus.NEW))
     })
     //remove invalid links
+
+
     val clearedLinks = new UrlsCleaner().cleanUrls(relations.toList, startUrl)
 
+    val (internalLinks, externalLinks) = clearedLinks.partition(relation => {
+      val startDomain = URLUtils.getDomainName(startUrl)
+      val linkDomain = URLUtils.getDomainName(relation.to.location)
+      //println(startDomain + " " + linkDomain + " " + startDomain.equals(linkDomain))
+      startDomain.equals(linkDomain)
+    })
+
+
+    val acceptedExternalLinks =  externalLinks.map(relation=>{
+      val linkDomain = URLUtils.getDomainName(URLUtils.normalize(relation.to.location))
+      val action = filterProcessor.filterDomain(linkDomain)
+      val toUrl = relation.to.updateStatus(action2UrlStatus(action))
+      new Relation(relation.from, toUrl)
+    }).filter(relation=>relation.to.status==UrlStatus.NEW)
 
     //pass to filter
-    val filteredRawUrlRelations = clearedLinks.map(relation => {
+    val filteredRawUrlRelations = internalLinks.map(relation => {
       val action = filterProcessor.filterUrl(relation.to.location)
 
       val status = {
@@ -148,7 +164,13 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
       new Relation(relation.from, toUrl)
     })
 
-    new ExtractedData(filteredRawUrlRelations, value)
+    new ExtractedData(filteredRawUrlRelations:::acceptedExternalLinks, value)
+  }
+
+  private def action2UrlStatus(action: Action.Value) = action match {
+    case Action.Download => UrlStatus.NEW
+    case Action.Skip => UrlStatus.SKIP
+    case _=>throw  new RuntimeException("None Action!")
   }
 
   private def onProcessingComplete(extractedData: ExtractedData, url: Url) {

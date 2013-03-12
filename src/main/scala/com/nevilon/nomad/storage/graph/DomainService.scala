@@ -60,17 +60,23 @@ class DomainService(implicit graph: TitanGraph) extends TransactionSupport {
   def createDomainIfNeeded(domain: Domain) {
     withTransaction {
       implicit tx => {
-        getDomainInTx(domain) match {
-          case Some(v) => //exists
-          case None => {
-            //need to create
-            val superNodeVertex = getSuperDomainNodeInTx
-            val domainVertex = tx.addVertex()
-            domainVertex.setProperty(GraphProperties.Domain.nameProperty, domain.name)
-            domainVertex.setProperty(GraphProperties.Domain.statusProperty, domain.status.toString)
-            tx.addEdge("", superNodeVertex, domainVertex, GraphProperties.Domain.urlEdgeLabel)
-          }
-        }
+        createDomainIfNeededInTx(domain)
+      }
+    }
+  }
+
+
+  def createDomainIfNeededInTx(domain: Domain)(implicit tx: TitanTransaction): Vertex = {
+    getDomainInTx(domain) match {
+      case Some(v) => v //exists
+      case None => {
+        //need to create
+        val superNodeVertex = getSuperDomainNodeInTx
+        val domainVertex = tx.addVertex()
+        domainVertex.setProperty(GraphProperties.Domain.nameProperty, domain.name)
+        domainVertex.setProperty(GraphProperties.Domain.statusProperty, domain.status.toString)
+        tx.addEdge("", superNodeVertex, domainVertex, GraphProperties.Domain.urlEdgeLabel)
+        domainVertex
       }
     }
   }

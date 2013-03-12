@@ -13,6 +13,13 @@ package com.nevilon.nomad.filter
 import com.nevilon.nomad.crawler.EntityParams
 
 
+class EndCoolFilter[T] extends Filter[T] {
+
+  def filter(arg: T): Option[Action.Action] = Some(Action.Download)
+
+}
+
+/*
 class EndFilter extends Filter[String] {
   def filter(url: String): Option[Action.Action] = Some(Action.Download)
 }
@@ -22,3 +29,8 @@ class EndEntityFilter extends Filter[EntityParams] {
   def filter(entityParams: EntityParams): Option[Action.Action] = Some(Action.Download)
 }
 
+class EndDomainFilter extends Filter[String] {
+  def filter(domain: String): Option[Action.Action] = Some(Action.Download)
+}
+
+*/

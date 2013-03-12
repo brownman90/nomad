@@ -15,6 +15,7 @@ import com.nevilon.nomad._
 import boot.GlobalConfig
 import com.tinkerpop.blueprints.Vertex
 import crawler._
+import devtools.Prototypes
 import logs.Logs
 import scala.Predef.String
 
@@ -46,26 +47,43 @@ class TitanDBService extends TransactionSupport with Logs {
     connector.shutdown()
   }
 
+
+  class Cache[T](load: (T) => Option[Vertex], create: (T) => Option[Vertex]) {
+
+    private val cache = new mutable.HashMap[T, Vertex]
+
+    def getOrElse(key: T): Option[Vertex] = {
+      cache.get(key) match {
+        case None => {
+          load(key) match {
+            case None => create(key)
+            case Some(v) => {
+              cache.put(key, v)
+              Some(v)
+            }
+          }
+        }
+        case Some(v) => {
+          Some(v)
+        }
+      }
+    }
+
+  }
+
   def linkUrls(relations: List[Relation]) {
+
+
     withTransaction {
       implicit tx => {
-        val cache = new mutable.HashMap[String, Vertex]
-
-        def getOrCreate(url: Url): Vertex = {
-          cache.getOrElse(url.location, {
-            urlService.getUrlInTx(url.location) match {
-              case Some(v) => {
-                cache.put(url.location, v)
-                v
-              }
-              case None => {
-                val v = urlService.saveOrUpdateUrlInTx(url)
-                cache.put(url.location, v)
-                v
-              }
-            }
-          })
-        }
+        val urlCache = new Cache[Url]((url) => {
+          urlService.getUrlInTx(url.location)
+        }, (url) => {
+          Some(urlService.saveOrUpdateUrlInTx(url))
+        })
+        val domainCache = new Cache[Domain]((domain) => {
+          domainService.getDomainInTx(domain)
+        }, (domain) => Some(domainService.createDomainIfNeededInTx(domain)))
 
 
         val isLinkedCache = new mutable.HashSet[String]
@@ -76,8 +94,8 @@ class TitanDBService extends TransactionSupport with Logs {
         implicit val superNode = domainService.getSuperDomainNodeInTx
         relations.foreach(relation => {
           var startTime = System.currentTimeMillis()
-          val parentPage = getOrCreate(relation.from)
-          val childPage = getOrCreate(relation.to)
+          val parentPage = urlCache.getOrElse(relation.from).get //getOrCreate(relation.from)
+          val childPage = urlCache.getOrElse(relation.to).get //getOrCreate(relation.to)
           tx.addEdge("", parentPage, childPage, "relation")
           var endTime = System.currentTimeMillis()
           firstTime = firstTime + (endTime - startTime)
@@ -86,6 +104,7 @@ class TitanDBService extends TransactionSupport with Logs {
 
           val domainName = URLUtils.getDomainName(URLUtils.normalize(URLUtils.getDomainName(newChildUrl.location)))
           val domain = new Domain(domainName, DomainStatus.NEW)
+          domainCache.getOrElse(domain).get //getOrCreateDomain(domain)
           startTime = System.currentTimeMillis()
           if (newChildUrl.status == UrlStatus.NEW && !isLinkedCache.contains(newChildUrl.location) &&
             !domainService.isUrlLinkedToDomainInTx(newChildUrl)) {

@@ -15,7 +15,6 @@ import java.io.File
 import com.nevilon.nomad.crawler.EntityParams
 
 
-
 class GroovyEntityFilter(groovyFile: File) extends Filter[EntityParams] {
 
   private val engine = new GroovyFilterEngine[EntityParams]("filterEntity", groovyFile) {
@@ -45,6 +44,20 @@ class GroovyUrlFilter(groovyFile: File) extends Filter[String] {
 
 }
 
+class GroovyDomainFilter(groovyFile: File) extends Filter[String] {
+
+  private val engine = new GroovyFilterEngine[String]("filterDomain", groovyFile) {
+    def mapArgs(t: String): List[AnyRef] = {
+      List[AnyRef](t)
+    }
+  }
+
+  def filter(domain: String): Option[Action.Action] = {
+    engine.filter(domain)
+  }
+
+}
+
 
 abstract class GroovyFilterEngine[T](filterMethodName: String, groovyFile: File) {
 
@@ -55,7 +68,6 @@ abstract class GroovyFilterEngine[T](filterMethodName: String, groovyFile: File)
   private def init() {
     val parent = getClass.getClassLoader
     val loader = new GroovyClassLoader(parent)
-    //temporary!
     val groovyClass = loader.parseClass(groovyFile)
     groovyObject = groovyClass.newInstance().asInstanceOf[GroovyObject]
   }
@@ -63,9 +75,7 @@ abstract class GroovyFilterEngine[T](filterMethodName: String, groovyFile: File)
   def mapArgs(t: T): List[AnyRef]
 
   def filter(t: T): Option[Action.Action] = {
-    val result = groovyObject.invokeMethod(filterMethodName, mapArgs(t).toArray[AnyRef])
-    if (!result.asInstanceOf[Boolean]) {
-      Some(Action.Skip)
-    } else None
+    val result = groovyObject.invokeMethod(filterMethodName, mapArgs(t).toArray[AnyRef]).asInstanceOf[Boolean]
+    if (!result) Some(Action.Skip) else None
   }
 }

@@ -35,5 +35,16 @@ def filterEntity(size, url, mimeType) {
         return false
     }
     return true
+}
+
+def filterDomain(domain){
+    if (domain.contains("arxiv.org")){
+        return false
+    }
+    if (domain.contains(".edu")){
+        return true
+    }
+    return false
+
 
 }

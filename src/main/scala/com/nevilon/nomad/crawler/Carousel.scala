@@ -53,6 +53,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
                   }
                 }
                 case Some(url) => {
+                  require(onBeforeStart!=null)
                   onBeforeStart(url)
                   futures += buildFuture(url)
                   info("starting future for crawling " + url.location)
