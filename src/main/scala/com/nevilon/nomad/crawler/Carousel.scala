@@ -28,9 +28,9 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
   private val sync = new Object
 
-
-
-  // fw.close()
+  def start(){
+    t.start()
+  }
 
   private val t = new Thread() {
 
@@ -77,7 +77,6 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
 
   }
 
-  t.start()
 
   def stop(softly: Boolean) {
     canWork = false

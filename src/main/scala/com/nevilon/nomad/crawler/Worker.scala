@@ -58,6 +58,7 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
     //flush links
   }
 
+  carousel.start()
 
   private def loadAndProcess(url2: Url) {
     cw.crawledCounter.inc()
