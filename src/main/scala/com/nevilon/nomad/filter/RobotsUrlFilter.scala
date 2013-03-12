@@ -19,9 +19,11 @@ class RobotsUrlFilter(domain: String) extends Filter[String] {
   //set the same user agent for http client
   object RobotsConfig {
 
+    //create page, use real email
+    //move to GlobalConfig
     val ROBOTS_TXT = "/robots.txt"
     val CRAWLER_NAME = "nomad"
-    val CRAWLER_EMAIL = "homad@nevilon.com"
+    val CRAWLER_EMAIL = "nomad@nevilon.com"
     val CRAWLER_PAGE = "http://www.nevilon.com"
 
   }

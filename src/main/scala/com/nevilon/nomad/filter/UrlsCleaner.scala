@@ -49,22 +49,23 @@ class UrlsCleaner extends Logs {
     })
   }
 
-  private def removeUrlsToAnotherDomain(linksToClear: List[Relation], startUrl: String): List[Relation] = {
-    linksToClear.filter(urlRelation => {
-      try {
-        //accept links from this domain only!
-        val startDomain = URLUtils.getDomainName(startUrl)
-        val linkDomain = URLUtils.getDomainName(urlRelation.to.location)
-        startDomain.equals(linkDomain)
-      }
-      catch {
-        case e: Exception => {
-          error("error during clearLinks", e)
-        }
-        false
-      }
-    })
-  }
+//  private def removeUrlsToAnotherDomain(linksToClear: List[Relation], startUrl: String): List[Relation] = {
+//    linksToClear.filter(urlRelation => {
+//      try {
+//        //accept links from this domain only!
+//        val startDomain = URLUtils.getDomainName(startUrl)
+//        val linkDomain = URLUtils.getDomainName(urlRelation.to.location)
+//        startDomain.equals(linkDomain)
+//      }
+//      catch {
+//        case e: Exception => {
+//          error("error during clearLinks", e)
+//        }
+//        false
+//      }
+//    })
+//  }
+
 
   private def removeDuplicateUrls(linksToClear: List[Relation]) = linksToClear.distinct
 

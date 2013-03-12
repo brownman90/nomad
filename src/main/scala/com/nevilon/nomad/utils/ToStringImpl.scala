@@ -8,13 +8,18 @@
  *
  * See file LICENSE.txt for License information.
  */
-package com.nevilon.nomad.filter
+package com.nevilon.nomad.utils
 
-import com.nevilon.nomad.crawler.EntityParams
+import java.lang.reflect.Field
 
+trait ToStringImpl {
 
-class LastFilter[T] extends Filter[T] {
-
-  def filter(arg: T): Option[Action.Action] = Some(Action.Download)
+  override def toString() = {
+    getClass().getDeclaredFields().map {
+      field: Field =>
+        field.setAccessible(true)
+        field.getName() + " : " + field.get(this).toString()
+    }.deep.mkString("; ")
+  }
 
 }

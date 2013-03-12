@@ -96,7 +96,7 @@ class APIFacade extends SynchronizedDBService with FileStorage {
 
 class Entity(val size: Long, val url: String,
              val timestamp: DateTime, val id: String,
-             val contentType: String, val md5: String, val urlId: String) extends StringGenerator
+             val contentType: String, val md5: String, val urlId: String) extends ToStringImpl
 
 */
 

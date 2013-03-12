@@ -17,12 +17,6 @@ import java.io.File
 
 object FilterProcessorFactory {
 
-  /*
-    build something like filter function?
-    use pipeline?
-    pass to next everything not processed by current filter
-
-   */
 
   //this is domain, not start url!!!!
   def get(domain: String): FilterProcessor = {
@@ -30,14 +24,14 @@ object FilterProcessorFactory {
     val fps = new FilterProcessorWithConstructor
 
     fps.addDomainFilter(new GroovyDomainFilter(new File(GlobalConfig.appConfig.filtersFile)))
-    fps.addDomainFilter(new EndCoolFilter[String])
+    fps.addDomainFilter(new LastFilter[String])
 
     fps.addEntityFilter(new GroovyEntityFilter(new File(GlobalConfig.appConfig.filtersFile)))
-    fps.addEntityFilter(new EndCoolFilter[EntityParams])
+    fps.addEntityFilter(new LastFilter[EntityParams])
 
     fps.addUrlFilter(new RobotsUrlFilter(domain))
     fps.addUrlFilter(new GroovyUrlFilter(new File(GlobalConfig.appConfig.filtersFile)))
-    fps.addUrlFilter(new EndCoolFilter[String])
+    fps.addUrlFilter(new LastFilter[String])
     fps
   }
 
@@ -45,8 +39,6 @@ object FilterProcessorFactory {
 
 
 class FilterProcessor extends AbsFilterProcessor {
-
-  import Action._
 
   def filterUrl(url: String) = urlFilterSet.filter(url)
 
