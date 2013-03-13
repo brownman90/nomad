@@ -20,12 +20,13 @@ import javax.activation.MimeType
 import scala.Unit
 
 
-class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
+abstract class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
 
-  private var onExceptionHandler: (Exception) => Unit = null
-  private var onHttpErrorHandler: (Int) => Unit = null
-  private var onDataStreamHandler: (EntityParams, HttpEntity, Url) => Unit = null
-  private var onFinishHandler: () => Unit = null
+  def onException(ex: Exception): Unit
+
+  def onHttpError(httError: Int): Unit
+
+  def onDataStream(entityParams: EntityParams, httpEntity: HttpEntity, url: Url): Unit
 
 
   private def buildEntityParams(httpEntity: HttpEntity, url: String): EntityParams = {
@@ -45,28 +46,18 @@ class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
       if (statusCode == HttpStatus.SC_OK) {
         val entity: HttpEntity = response.getEntity
         val entityParams = buildEntityParams(entity, url.location)
-        onDataStreamHandler(entityParams, entity, url)
+        onDataStream(entityParams, entity, url)
       } else {
-        onHttpErrorHandler(statusCode)
+        onHttpError(statusCode)
       }
     } catch {
       case e: Exception => {
         httpGet.abort()
-        onExceptionHandler(e)
+        onException(e)
       }
     }
     finally {
       httpGet.abort()
-      onFinishHandler()
     }
   }
-
-  def onDataStream(handler: (EntityParams, HttpEntity, Url) => Unit) = onDataStreamHandler = handler
-
-  def onHttpError(handler: (Int) => Unit) = onHttpErrorHandler = handler
-
-  def onException(handler: (Exception) => Unit) = onExceptionHandler = handler
-
-  def onFinish(handler: () => Unit) = onFinishHandler = handler
-
 }

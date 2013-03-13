@@ -17,21 +17,19 @@ import scala.Some
 import collection.mutable
 
 
-trait CarouselCallbacks {
+
+abstract class Carousel(val maxThreads: Int, dataProvider: PopProvider) extends Logs {
+
+  private var futures = new mutable.HashSet[Future[Unit]] with mutable.SynchronizedSet[Future[Unit]]
+  private var canWork = true
+  private val sync = new Object
+
 
   def onStartMethod(url: Url)
 
   def onBeforeStart(url: Url)
 
   def onCrawlingComplete()
-
-}
-
-class Carousel(val maxThreads: Int, dataProvider: PopProvider, callbacks: CarouselCallbacks) extends Logs {
-
-  private var futures = new mutable.HashSet[Future[Unit]] with mutable.SynchronizedSet[Future[Unit]]
-  private var canWork = true
-  private val sync = new Object
 
   def start() {
     thread.start()
@@ -54,7 +52,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider, callbacks: Carous
                   } else sync.wait()
                 }
                 case Some(url) => {
-                  callbacks.onBeforeStart(url)
+                  onBeforeStart(url)
                   futures += buildFuture(url)
                   info("starting future for crawling " + url.location)
                 }
@@ -64,7 +62,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider, callbacks: Carous
           } else if (!canWork) {
             if (futures.nonEmpty) sync.wait()
             else {
-              callbacks.onCrawlingComplete()
+              onCrawlingComplete()
               flag = false
             }
           }
@@ -83,7 +81,7 @@ class Carousel(val maxThreads: Int, dataProvider: PopProvider, callbacks: Carous
   private def buildFuture(url: Url): Future[Unit] = {
     implicit val ec = ExecutionContext.Implicits.global
     val thisFuture = future {
-      callbacks.onStartMethod(url)
+      onStartMethod(url)
     }
     thisFuture.onComplete((data: Try[Unit]) => ({
       futures -= thisFuture
