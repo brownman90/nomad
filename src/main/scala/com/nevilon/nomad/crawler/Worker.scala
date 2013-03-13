@@ -24,41 +24,39 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
              dbService: SynchronizedDBService, contentSaver: ContentSaver,
              onCrawlingComplete: (Worker) => Unit) extends Logs {
 
-
   private val cw = new CounterWrapper(domain)
-
   private val linkProvider = new LinkProvider(domain, dbService)
   linkProvider.findOrCreateUrl(URLUtils.normalize(startUrl))
   private val pageDataExtractor = new PageDataExtractor
-
   private val filterProcessor = FilterProcessorFactory.get(URLUtils.normalize(startUrl))
+  private val httpClient = HttpClientFactory.
+    buildHttpClient(maxThreads, maxThreads, UserAgentProvider.getUserAgentString())
 
+  private val callbacks = new CarouselCallbacks {
 
-  private val httpClient = HttpClientFactory.buildHttpClient(maxThreads, maxThreads, UserAgentProvider.getUserAgentString())
+    def onBeforeStart(url: Url) {
+      dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS))
+    }
 
-  private val carousel = new Carousel(maxThreads, linkProvider)
-  carousel.setOnStart((url: Url) => loadAndProcess(url))
-  carousel.setOnBeforeStart((url: Url) => {
-    (dbService.saveOrUpdateUrl(url.updateStatus(UrlStatus.IN_PROGRESS)))
-  })
+    def onCrawlingComplete() {
+      httpClient.getConnectionManager.shutdown()
+      linkProvider.flushExtractedLinks()
+      info("crawling complete " + startUrl)
+      Worker.this.onCrawlingComplete(Worker.this)
+    }
 
-  carousel.setOnCrawlingComplete(() => {
-    httpClient.getConnectionManager.shutdown()
-    linkProvider.flushExtractedLinks()
-    info("crawling complete " + startUrl)
-    onCrawlingComplete(this)
-    //flush links
-  })
-
-
-  def stop(softly: Boolean) {
-    //stop carousel
-    info("sending stop command to carousel " + startUrl)
-    carousel.stop(softly)
-    //flush links
+    def onStartMethod(url: Url) {
+      loadAndProcess(url)
+    }
   }
 
+  private val carousel = new Carousel(maxThreads, linkProvider, callbacks)
   carousel.start()
+
+  def stop(softly: Boolean) {
+    info("sending stop command to carousel " + startUrl)
+    carousel.stop(softly)
+  }
 
   private def loadAndProcess(url2: Url) {
     cw.crawledCounter.inc()
@@ -139,12 +137,12 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
     })
 
 
-    val acceptedExternalLinks =  externalLinks.map(relation=>{
+    val acceptedExternalLinks = externalLinks.map(relation => {
       val linkDomain = URLUtils.getDomainName(URLUtils.normalize(relation.to.location))
       val action = filterProcessor.filterDomain(linkDomain)
       val toUrl = relation.to.updateStatus(action2UrlStatus(action))
       new Relation(relation.from, toUrl)
-    }).filter(relation=>relation.to.status==UrlStatus.NEW)
+    }).filter(relation => relation.to.status == UrlStatus.NEW)
 
     //pass to filter
     val filteredRawUrlRelations = internalLinks.map(relation => {
@@ -165,13 +163,13 @@ class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
       new Relation(relation.from, toUrl)
     })
 
-    new ExtractedData(filteredRawUrlRelations:::acceptedExternalLinks, value)
+    new ExtractedData(filteredRawUrlRelations ::: acceptedExternalLinks, value)
   }
 
   private def action2UrlStatus(action: Action.Value) = action match {
     case Action.Download => UrlStatus.NEW
     case Action.Skip => UrlStatus.SKIP
-    case _=>throw  new RuntimeException("None Action!")
+    case _ => throw new RuntimeException("None Action!")
   }
 
   private def onProcessingComplete(extractedData: ExtractedData, url: Url) {
