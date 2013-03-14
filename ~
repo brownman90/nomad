@@ -1,8 +1,0 @@
-[paths]
-default=https://bitbucket.org/hudvin/nomad
-[ui]
-username=hudvin
-verbose=true
-[auth]
-bb.prefix = https://bitbucket.org/hudvin/nomad
-bb.username=hudvin
