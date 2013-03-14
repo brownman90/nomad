@@ -13,7 +13,7 @@ package com.nevilon.nomad.crawler
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.conn.PoolingClientConnectionManager
 import org.apache.http.conn.ConnectionKeepAliveStrategy
-import org.apache.http.{HeaderElement, HeaderElementIterator, HttpResponse}
+import org.apache.http.HttpResponse
 import org.apache.http.protocol.{HTTP, HttpContext}
 import org.apache.http.message.BasicHeaderElementIterator
 import org.apache.http.conn.scheme.{PlainSocketFactory, Scheme, SchemeRegistry}

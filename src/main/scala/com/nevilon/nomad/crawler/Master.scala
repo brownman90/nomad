@@ -12,7 +12,7 @@ package com.nevilon.nomad.crawler
 
 import collection.mutable.ArrayBuffer
 import com.nevilon.nomad.storage.graph.{SynchronizedDBService, FileStorage}
-import com.nevilon.nomad.logs.{Statistics, Logs}
+import com.nevilon.nomad.logs.Logs
 import collection.mutable
 import com.nevilon.nomad.boot.GlobalConfig
 import java.util.{TimerTask, Timer}

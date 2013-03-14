@@ -10,12 +10,8 @@
  */
 package com.nevilon.nomad.storage.graph
 
-import scala.Predef._
 import com.nevilon.nomad._
-import boot.GlobalConfig
-import com.tinkerpop.blueprints.Vertex
 import crawler._
-import devtools.Prototypes
 import logs.Logs
 import scala.Predef.String
 

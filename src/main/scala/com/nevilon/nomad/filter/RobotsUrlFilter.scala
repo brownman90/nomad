@@ -12,7 +12,6 @@ package com.nevilon.nomad.filter
 
 import java.net.URL
 import crawlercommons.robots.{RobotUtils, SimpleRobotRulesParser}
-import crawlercommons.fetcher.UserAgent
 import com.nevilon.nomad.crawler.UserAgentProvider
 
 class RobotsUrlFilter(domain: String) extends Filter[String] {

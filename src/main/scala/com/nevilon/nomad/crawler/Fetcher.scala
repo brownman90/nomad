@@ -11,7 +11,7 @@
 package com.nevilon.nomad.crawler
 
 import org.apache.http.client.HttpClient
-import org.apache.http.{HttpStatus, HttpResponse, HttpEntity}
+import org.apache.http.{HttpStatus, HttpEntity}
 import org.apache.commons.httpclient.util.URIUtil
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.protocol.BasicHttpContext

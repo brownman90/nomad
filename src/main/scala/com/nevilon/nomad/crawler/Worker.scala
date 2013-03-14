@@ -10,15 +10,11 @@
  */
 package com.nevilon.nomad.crawler
 
-import com.nevilon.nomad.storage.graph.{FileStorage, SynchronizedDBService}
-import com.nevilon.nomad.filter.{FilterProcessor, UrlsCleaner, Action, FilterProcessorFactory}
+import com.nevilon.nomad.storage.graph.SynchronizedDBService
+import com.nevilon.nomad.filter.{Action, FilterProcessorFactory}
 import org.apache.http.HttpEntity
-import java.io.{ByteArrayInputStream, InputStream}
-import org.apache.http.util.EntityUtils
 import com.nevilon.nomad.logs
 import logs.{Logs, Statistics}
-import com.nevilon.nomad.boot.GlobalConfig
-import collection.mutable.ListBuffer
 
 
 class Worker(val domain: Domain, val startUrl: String, val maxThreads: Int,
