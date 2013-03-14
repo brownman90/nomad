@@ -13,8 +13,4 @@ package com.nevilon.nomad.crawler
 import javax.activation.MimeType
 
 
-class FetchedContent(val gfsId: String, val entityParams: EntityParams, val content: String)
-
-class ExtractedData(val relations: List[Relation], val fetchedContent: FetchedContent)
-
 class EntityParams(val size: Long, val url: String, val mimeType: MimeType)

@@ -25,25 +25,12 @@ trait PopProvider {
 class LinkProvider(domain: Domain, dbService: SynchronizedDBService) extends PopProvider with Logs {
 
   private val extractedLinks = new ListBuffer[Relation]
-  private val linksToCrawl = new mutable.ArrayStack[Url]
+  private val linksToCrawlQueue = new mutable.ArrayStack[Url]
 
-  private val BFS_LIMIT = GlobalConfig.linksConfig.bfsLimit
+  private val LINKS_QUEUE_LIMIT = GlobalConfig.linksConfig.queueLimit
   private val EXTRACTED_LINKS_LIMIT = GlobalConfig.linksConfig.extractedLinksCache
 
-
-  /*
-    url - normalized form
-   */
   def findOrCreateUrl(url: String) {
-    /*
-       go to service
-       do we need to check domains table?
-       obviously we need domains table to choose domains for crawling
-       maybe we should check(lookup for) link and than use domains table as while list?
-       so here we need just find url in urls table and than check if domain is in white list(domains table)
-
-     */
-    //do not update if already present!!!
     dbService.getUrl(url) match {
       case None => {
         val savedUrl = dbService.saveOrUpdateUrl(new Url(url, UrlStatus.NEW))
@@ -54,26 +41,18 @@ class LinkProvider(domain: Domain, dbService: SynchronizedDBService) extends Pop
 
   }
 
-  def addToExtractedLinks(linkRelation: Relation) {
-    extractedLinks += linkRelation
-  }
+  def addToExtractedLinks(linkRelation: Relation) = extractedLinks += linkRelation
 
   private def urlToCrawl(): Option[Url] = {
-    if (extractedLinks.length >= EXTRACTED_LINKS_LIMIT || linksToCrawl.size == 0) {
-      flushExtractedLinks()
-    }
-    if (linksToCrawl.size == 0) {
+    if (extractedLinks.length >= EXTRACTED_LINKS_LIMIT || linksToCrawlQueue.size == 0) flushExtractedLinks()
+    if (linksToCrawlQueue.size == 0) {
       val links = loadLinksForCrawling(domain)
-      if (links.size == 0) {
-        None
-      }
+      if (links.size == 0) None
       else {
-        linksToCrawl ++= links
-        Some(linksToCrawl.pop())
+        linksToCrawlQueue ++= links
+        Some(linksToCrawlQueue.pop())
       }
-    } else {
-      Some(linksToCrawl.pop())
-    }
+    } else Some(linksToCrawlQueue.pop())
   }
 
 
@@ -84,15 +63,11 @@ class LinkProvider(domain: Domain, dbService: SynchronizedDBService) extends Pop
   }
 
   private def loadLinksForCrawling(domain: Domain): List[Url] = {
-    //val domain_ = URLUtils.getDomainName(s)
-    //TODO extract domain here!!!
-    val bfsLinks = dbService.getLinksToCrawl(domain, BFS_LIMIT)
-    info("bfs links loaded: " + bfsLinks.size)
-    bfsLinks
+    val linksToCrawl = dbService.getLinksToCrawl(domain, LINKS_QUEUE_LIMIT)
+    info("links to crawl  loaded: " + linksToCrawl.size)
+    linksToCrawl
   }
 
-  def pop(): Option[Url] = {
-    urlToCrawl()
+  def pop(): Option[Url] =  urlToCrawl()
 
-  }
 }

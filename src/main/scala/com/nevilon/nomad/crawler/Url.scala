@@ -2,14 +2,6 @@ package com.nevilon.nomad.crawler
 
 import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 3/12/13
- * Time: 3:35 PM
- */
-
-
 class Url(
            val location: String, val status: UrlStatus.Value,
            val id: String, val fileId: String
@@ -18,17 +10,11 @@ class Url(
   def this(location: String, status: UrlStatus.Value) = this(location, UrlStatus.NEW, "none", "none")
 
 
-  def updateLocation(newLocation: String): Url = {
-    new Url(newLocation, status, id, fileId)
-  }
+  def updateLocation(newLocation: String) = new Url(newLocation, status, id, fileId)
 
-  def updateStatus(newStatus: UrlStatus.Value): Url = {
-    new Url(location, newStatus, id, fileId)
-  }
+  def updateStatus(newStatus: UrlStatus.Value) = new Url(location, newStatus, id, fileId)
 
-  def updateFileId(newFileId: String): Url = {
-    new Url(location, status, id, newFileId)
-  }
+  def updateFileId(newFileId: String) = new Url(location, status, id, newFileId)
 
 
   override def equals(obj: Any): Boolean = {
@@ -38,12 +24,10 @@ class Url(
       new EqualsBuilder()
         .append(location, other.location)
         .isEquals
-    } else {
-      false
-    }
+    } else false
   }
 
-  override def hashCode(): Int = {
+  override def hashCode() = {
     new HashCodeBuilder()
       .append(location)
       .toHashCode

@@ -24,9 +24,8 @@ class GroovyEntityFilter(groovyFile: File) extends Filter[EntityParams] {
   }
 
 
-  def filter(entityParams: EntityParams): Option[Action.Action] = {
-    engine.filter(entityParams)
-  }
+  def filter(entityParams: EntityParams) = engine.filter(entityParams)
+
 }
 
 
@@ -38,9 +37,7 @@ class GroovyUrlFilter(groovyFile: File) extends Filter[String] {
     }
   }
 
-  def filter(url: String): Option[Action.Action] = {
-    engine.filter(url)
-  }
+  def filter(url: String) = engine.filter(url)
 
 }
 
@@ -52,9 +49,8 @@ class GroovyDomainFilter(groovyFile: File) extends Filter[String] {
     }
   }
 
-  def filter(domain: String): Option[Action.Action] = {
-    engine.filter(domain)
-  }
+  def filter(domain: String) = engine.filter(domain)
+
 
 }
 

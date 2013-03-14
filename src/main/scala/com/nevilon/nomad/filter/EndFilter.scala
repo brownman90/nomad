@@ -10,7 +10,6 @@
  */
 package com.nevilon.nomad.filter
 
-import com.nevilon.nomad.crawler.EntityParams
 
 
 class LastFilter[T] extends Filter[T] {

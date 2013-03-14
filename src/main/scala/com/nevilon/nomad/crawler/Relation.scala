@@ -2,12 +2,6 @@ package com.nevilon.nomad.crawler
 
 import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 3/12/13
- * Time: 3:36 PM
- */
 
 class Relation(val from: Url, val to: Url) {
 

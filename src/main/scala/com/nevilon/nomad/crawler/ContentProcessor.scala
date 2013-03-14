@@ -7,13 +7,9 @@ import com.nevilon.nomad.filter.{UrlsCleaner, Action, FilterProcessor}
 import org.apache.http.util.EntityUtils
 import java.io.ByteArrayInputStream
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 3/13/13
- * Time: 6:18 PM
- */
-class ContentProcessor(saver: ContentSaver, filterProcessor: FilterProcessor, startUrl: String)(implicit cw: CounterWrapper) extends Logs {
+
+class ContentProcessor(saver: ContentSaver, filterProcessor: FilterProcessor, startUrl: String)
+                      (implicit cw: CounterWrapper) extends Logs {
 
 
   private val pageDataExtractor = new PageDataExtractor
@@ -45,7 +41,8 @@ class ContentProcessor(saver: ContentSaver, filterProcessor: FilterProcessor, st
     val clearedLinks = new UrlsCleaner().cleanUrls(relations.toList, startUrl)
 
     val startDomain = URLUtils.getDomainName(startUrl)
-    val (internalLinks, externalLinks) = clearedLinks.partition(relation => startDomain.equals(URLUtils.getDomainName(relation.to.location)))
+    val (internalLinks, externalLinks) = clearedLinks.partition(relation =>
+      startDomain.equals(URLUtils.getDomainName(relation.to.location)))
 
     val acceptedExternalLinks = externalLinks.map(relation => {
       val linkDomain = URLUtils.getDomainName(URLUtils.normalize(relation.to.location))

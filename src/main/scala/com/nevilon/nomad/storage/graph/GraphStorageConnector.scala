@@ -55,8 +55,10 @@ abstract class GraphStorageConnector(val conf: GraphStorageConfig) extends Logs 
   }
 
   private def createTypes(graph: TitanGraph): TitanGraph = {
-    graph.makeType().name(GraphProperties.Url.locationProperty).dataType(classOf[String]).indexed().unique().functional().makePropertyKey()
-    graph.makeType().name(GraphProperties.Domain.nameProperty).dataType(classOf[String]).indexed().unique().functional().makePropertyKey()
+    graph.makeType().name(GraphProperties.Url.locationProperty).dataType(classOf[String]).
+      indexed().unique().functional().makePropertyKey()
+    graph.makeType().name(GraphProperties.Domain.nameProperty).dataType(classOf[String]).
+      indexed().unique().functional().makePropertyKey()
     graph.stopTransaction(Conclusion.SUCCESS)
     graph
   }

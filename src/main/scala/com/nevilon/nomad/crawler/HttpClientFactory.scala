@@ -27,34 +27,38 @@ object HttpClientFactory {
 
   private val stubSSLSocketFactory = new SSLSocketFactory(new TrustStrategy() {
 
-    def isTrusted(chain: Array[cert.X509Certificate], authType: String): Boolean = true
+    def isTrusted(chain: Array[cert.X509Certificate], authType: String) = true
   }, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
 
 
-  def buildHttpClient(threadsTotal: Int, threadsPerHost: Int, userAgent:String): DefaultHttpClient = {
-    //set custom https factory to accept all https certs (self signed and incorrect)
+  def buildHttpClient(threadsTotal: Int, threadsPerHost: Int, userAgent: String): DefaultHttpClient = {
+    val cm: PoolingClientConnectionManager = new PoolingClientConnectionManager(buildSchemeRegistry())
+    cm.setMaxTotal(threadsTotal)
+    cm.setDefaultMaxPerRoute(threadsPerHost)
+    val httpClient = new DefaultHttpClient(cm)
+    httpClient.getParams().setParameter(CoreProtocolPNames.USER_AGENT, userAgent)
+    httpClient.setKeepAliveStrategy(buildKeepAliveStrategy())
+    httpClient
+  }
+
+  private def buildSchemeRegistry(): SchemeRegistry = {
     val schemeRegistry = new SchemeRegistry()
     schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory))
     schemeRegistry.register(new Scheme("https", 443, stubSSLSocketFactory))
-    //set threading params
-    val cm: PoolingClientConnectionManager = new PoolingClientConnectionManager(schemeRegistry)
-    cm.setMaxTotal(threadsTotal)
-    cm.setDefaultMaxPerRoute(threadsPerHost)
-    //build client
-    val httpClient: DefaultHttpClient = new DefaultHttpClient(cm)
-    httpClient.getParams().setParameter(CoreProtocolPNames.USER_AGENT, userAgent)
-    //active usage of keep-alive
-    httpClient.setKeepAliveStrategy(new ConnectionKeepAliveStrategy {
+    schemeRegistry
+  }
+
+  private def buildKeepAliveStrategy(): ConnectionKeepAliveStrategy = {
+    new ConnectionKeepAliveStrategy {
       def getKeepAliveDuration(response: HttpResponse, context: HttpContext): Long = {
-        val it: HeaderElementIterator = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE))
+        val it = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE))
         while (it.hasNext) {
-          val he: HeaderElement = it.nextElement
-          val param: String = he.getName
-          val value: String = he.getValue
+          val he = it.nextElement
+          val param = he.getName
+          val value = he.getValue
           if (value != null && param.equalsIgnoreCase("timeout")) {
-            try {
+            try
               return value.toLong * 1000
-            }
             catch {
               case ignore: NumberFormatException => {
                 ignore.printStackTrace()
@@ -62,13 +66,10 @@ object HttpClientFactory {
             }
           }
         }
-        30 * 1000 // ???
-
+        30 * 1000
       }
-    })
-    httpClient
+    }
   }
-
 
 }
 

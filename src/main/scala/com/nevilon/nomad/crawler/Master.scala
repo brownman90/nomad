@@ -25,19 +25,16 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
   private val MAX_THREADS = GlobalConfig.masterConfig.threadsInWorker
   private val NUM_OF_WORKERS = GlobalConfig.masterConfig.workers
 
+  private val contentSaver = new ContentSaver(new FileStorage(GlobalConfig.mongoDBConfig))
   private val workers = new ArrayBuffer[Worker]
-
   private val dbService = new SynchronizedDBService
   private val domainInjector = new DomainInjector(dbService)
   seeds.foreach(seed => domainInjector.inject(seed))
 
-  private val contentSaver = new ContentSaver(new FileStorage(GlobalConfig.mongoDBConfig))
 
   def startCrawling() {
     val domainsIt = buildDomainIterator(DomainStatus.IN_PROGRESS)
-    domainsIt.foreach(domain => {
-      dbService.updateDomain(domain.get.updateStatus(DomainStatus.NEW))
-    })
+    domainsIt.foreach(domain => dbService.updateDomain(domain.get.updateStatus(DomainStatus.NEW)))
     startPrinting()
     info("start workers")
     loadWorkers()
@@ -52,7 +49,8 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
         case _ => true
       }
     }
-    Iterator.continually(dbService.getDomainWithStatus(domainStatus)).takeWhile(domain => hasMore(domain))
+    Iterator.continually(dbService.getDomainWithStatus(domainStatus)).
+      takeWhile(domain => hasMore(domain))
   }
 
   private def loadWorkers() = synchronized {
@@ -101,7 +99,7 @@ class Master(seeds: List[String]) extends StatisticsPeriodicalPrinter with Logs 
     private val timerTask = new TimerTask {
       def run() {
         val it = buildDomainIterator(DomainStatus.NEW)
-//        it.foreach(d => println(d.get.name))
+        //        it.foreach(d => println(d.get.name))
 
         loadWorkers()
       }

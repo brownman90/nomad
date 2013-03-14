@@ -28,7 +28,6 @@ abstract class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
 
   def onDataStream(entityParams: EntityParams, httpEntity: HttpEntity, url: Url): Unit
 
-
   private def buildEntityParams(httpEntity: HttpEntity, url: String): EntityParams = {
     val mimeType = new MimeType(httpEntity.getContentType.getValue)
     val entityParams = new EntityParams(httpEntity.getContentLength, url, mimeType)
@@ -41,10 +40,10 @@ abstract class Fetcher(url: Url, httpClient: HttpClient) extends Logs {
     val httpGet = new HttpGet(encodedUrl)
     info("connecting to " + encodedUrl)
     try {
-      val response: HttpResponse = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
+      val response = httpClient.execute(httpGet, new BasicHttpContext()) //what is context?
       val statusCode = response.getStatusLine.getStatusCode
       if (statusCode == HttpStatus.SC_OK) {
-        val entity: HttpEntity = response.getEntity
+        val entity = response.getEntity
         val entityParams = buildEntityParams(entity, url.location)
         onDataStream(entityParams, entity, url)
       } else {

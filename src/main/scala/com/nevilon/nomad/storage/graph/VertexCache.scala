@@ -3,12 +3,6 @@ package com.nevilon.nomad.storage.graph
 import com.tinkerpop.blueprints.Vertex
 import collection.mutable
 
-/**
- * Created with IntelliJ IDEA.
- * User: hudvin
- * Date: 3/12/13
- * Time: 3:26 PM
- */
 
 class Cache[T](load: (T) => Option[Vertex], create: (T) => Option[Vertex]) {
 

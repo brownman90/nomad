@@ -72,7 +72,7 @@ object GlobalConfig {
 
 
   val linksConfig: LinksConfig = new LinksConfig {
-    def bfsLimit = conf.getInt("links.bfs_limit")
+    def queueLimit = conf.getInt("links.queue_limit")
 
     def extractedLinksCache = conf.getInt("links.extracted_links_cache")
   }
@@ -121,7 +121,7 @@ trait MasterConfig {
 
 trait LinksConfig {
 
-  def bfsLimit: Int
+  def queueLimit: Int
 
   def extractedLinksCache: Int
 
