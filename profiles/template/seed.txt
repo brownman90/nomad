@@ -1,1 +1,3 @@
-http://nlp.stanford.edu
+http://lenta.ru
+http://nlp.stanford.edu/
+http://aaai.org

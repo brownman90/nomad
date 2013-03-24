@@ -31,10 +31,10 @@ def filterUrl(url) {
 }
 
 def filterEntity(size, url, mimeType) {
-    if (size > 50000) {
-        return false
-    }
-    return true
+    if(mimeType.toString().contains("html") || mimeType.toString().contains("pdf")){
+        return true
+    }else return false
+
 }
 
 def filterDomain(domain){
