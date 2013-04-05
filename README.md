@@ -18,7 +18,7 @@ How to get
 ===
 
 ### From source
-Nomad uses gradle as build system. To build from source you need:
+Nomad uses gradle ( http://www.gradle.org/ ) as build system. To build from source you need:
 
 1. Install gradle
 2. Checkout src
@@ -29,6 +29,10 @@ Nomad uses gradle as build system. To build from source you need:
 You can find nomad*.zip in 
 
      build/distributions/
+
+4. You can also generate Intellij IDEA project by
+
+    gradle idea
      
 
 ### Binary
@@ -56,7 +60,7 @@ for example:
 
 ###What is profile?
 
-To simplify usage of different congigurations nomad allows to create profiles. Profile is a folder with 3 files:
+To simplify usage of different configurations nomad allows to create profiles. Profile is a folder with 3 files:
 
 1. application.conf. Contains configuration of graph and files storages and configuration of crawling strategy.
 2. filters.groovy. Groovy file with two functions - filterUrl and filterEntity. Here you can define any logic you want to filter urls and files.
@@ -122,7 +126,7 @@ If function returns true, url or file(entity) will be downloaded, otherwise - sk
 filterUrl is called after link has been extracted.
 So if filterUrl returns false for this link, nomad will never try to crawle it. 
 filterEntity is called after headers for file is received. 
-If funtions returns false then file is skipped. 
+If functions returns false then file is skipped.
 It may be useful to prevent downloading of large files, for example.
 
 
